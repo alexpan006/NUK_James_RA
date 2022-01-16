@@ -5,7 +5,7 @@ df=pd.read_csv("./觀測天氣之資料表.csv")
 df=df.sort_values("天氣",ascending=True)
 print(df.head())
 
-
+# hello
 
 class raw_data:
     class_info=0.0  #類別訊息獲取量

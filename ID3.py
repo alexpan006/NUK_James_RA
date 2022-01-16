@@ -1,9 +1,9 @@
 #coding=utf-8
 import pandas as pd
 
-df=pd.read_csv("./觀測天氣之資料表.csv")
-df=df.sort_values("天氣",ascending=True)
-print(df.head())
+# df=pd.read_csv("./觀測天氣之資料表.csv")
+# df=df.sort_values("天氣",ascending=True)
+# print(df.head())
 
 # hello
 
@@ -13,7 +13,7 @@ class raw_data:
     conclusions=[] #結論
     
     '''
-    attributes['晴朗']=effect_attribute('晴朗')
+    attributes['天氣']=effect_attribute('天氣')
     '''
     def read_in_csv(): #讀csv順便把attributes字典建立，記得用pandas讀csv
         pass
@@ -40,7 +40,7 @@ class effect_attribute:
             pass
 
     attr_subset=>
-    {"晴朗" : [2,0],
+    {"晴朗" : [1,0],
     "陰天" : [1,1],
     "雨天" : [0,2]}
 

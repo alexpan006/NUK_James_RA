@@ -7,7 +7,13 @@ import math
 from random import random
 
 
-
+'''
+0124 TODO before 0130
+>>修改read_in_csv()>>傳入值可能是filePath/dataFrame>>要做不同的事
+>>clean_data產出policy>>policy包含effect, deep, simplicity, reliability, support, class distribution
+>>修改結論>>最後一行必為結論>>結論可能不止2種 ///// DONE >> 我覺得啦，感覺沒啥毛病但我沒有第3種結論可以試，就是邏輯上應該沒事沒事
+>>建立effect_attributes即計算gainA ///// DONE
+'''
 
 
 class clean_data:
@@ -22,12 +28,14 @@ class raw_data:
     class_info = 0.0  #類別訊息獲取量
     attributes = {}  #建字典對到 effect attribute
     conclusions = [] #結論
+    conclution_col = ""
     raw_source=pd.DataFrame()
     class_info=0.0  #類別訊息獲取量
     attributes={}  #建字典對到 effect attribute
     primary_key=[] #唯一分辨的key
     clean_subsets=[] #其他的clean subset 裡面存 clean_data class
     unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
+
     '''
     attributes['天氣']=effect_attribute('天氣')
     '''
@@ -132,24 +140,33 @@ class raw_data:
     
     def read_in_csv(): #讀csv順便把attributes字典建立，記得用pandas讀csv
         df = pd.read_csv("./觀測天氣之資料表.csv") #讀檔
-
-        con = df['結論'].sort_values()
+        #讀結論的col name
+        for col in df.columns[-1:]:
+            raw_data.conclution_col = col #記錄結論的col name
+        
+        con = df[raw_data.conclution_col].sort_values()
         data_sum = con.count() #資料總數
         con_type = con.T.drop_duplicates() #結論有哪幾種
         for result in con_type: #把結論存起來
             raw_data.conclusions.append(result)
         con_type_num = len(raw_data.conclusions)
-# 計算class_info
+        # 計算class_info
         for count in range(0,con_type_num):
             upper = con.value_counts()[count]
             raw_data.class_info -= (upper/data_sum)*math.log2(upper/data_sum)
-        
-        for col in df.columns: #取得全部屬性
-            if col != "結論":
-                raw_data.attributes[col] = effect_attribute(name = col, con = raw_data.conclusions, gainA = raw_data.class_info)
+        #建立effect_attribute並計算gainA
+        for col in df.columns[:-1]:
+            #建立effect_attribute
+            raw_data.attributes[col] = effect_attribute(name = col, con = raw_data.conclusions, gainA = raw_data.class_info)
+            #計算gainA和attr_info
+            #先排序資料>>只取結論跟該屬性
+            arrange_sub_attr_data = df[[col, raw_data.conclution_col]].sort_values(by = raw_data.conclution_col).sort_values(by = col)
+            #call function進行計算
+            raw_data.attributes[col].caculate_attr(data = arrange_sub_attr_data)
+
 
         print(raw_data.class_info) #印出類別資訊量for check check!
-        return df, raw_data.attributes #回傳csv資料
+        return raw_data.attributes
 
 #公式 >>> [-= type/all(log2(type/all))]
     
@@ -157,7 +174,8 @@ class effect_attribute:
     effect_attr_name = ""    #屬性名稱
     attr_info = 0.0  #屬性訊息量
     gainA = 0.0   #屬性訊息獲取量
-    conclusions = []   #結論
+    conclutions = []   #結論
+    con_num = 0 #存結論數量
     attr_subset = {}  #屬性對應結論
     '''
     attr_subset={}
@@ -180,8 +198,9 @@ class effect_attribute:
     '''
     def __init__(self, name, con, gainA):
         self.effect_attr_name = name
-        self.conclusions = con
+        self.conclutions = con
         self.gainA = gainA
+        self.con_num = len(con)
         
     def caculate_attr(self, data):
         
@@ -191,35 +210,30 @@ class effect_attribute:
         attr_con = data.value_counts() #屬性+結論的個別總數
         
         data_type_num = data[self.effect_attr_name].value_counts() #屬性資料的個別總數 （有 9 無 0)
-        
-#這裡看起來會出大事>>>>就如果說 屬性資料用一樣的敘述好像會蓋掉資料ㄇ 還是其實沒啥差<<他反正我現在看起來是存在同一個dic裡面啦@_@
+
         for type in data_type: #初始化屬性結論
             temp_info = 0.0
             data_upper = data_type_num[type]
-            con = self.conclusions
-            #先假設只有兩ㄍ結論我之後再改QQ
-            type_con0 = attr_con[type].get(con[0]) #該屬性的性質的結論結果
-            type_con1 = attr_con[type].get(con[1])
+            con = self.conclutions
+            
+            type_con =[]
+            type_sum = 0
+            for idx in range(0,self.con_num):
+                type_con.append(attr_con[type].get(con[idx]))
+                #修正
+                if type_con[idx] == None:
+                    type_con[idx] = 0
+                type_sum += type_con[idx]
 
-            #修正無資料ㄉ東東
-            if type_con0 == None:
-                type_con0 = 0
-            if type_con1 == None:
-                type_con1 = 0
-
-            type_sum = type_con0 + type_con1 #之後改之後改
-
-            self.attr_subset[type] = [type_con0,type_con1]
+            self.attr_subset[type] = type_con
             for result in self.attr_subset[type]:
-                if result == 0:
+                if result == 0: #如果沒有那種結果就跳過，不然算出來會出事
                     break
                 else:
                     temp_info -= (result/type_sum)*math.log2(result/type_sum)
             self.attr_info += (data_upper/data_sum)*temp_info
 
-        # print(self.attr_subset)
-        print(self.effect_attr_name)
-        return self.attr_info
+        self.gainA -= self.attr_info
 
 def main():
     cccMain()
@@ -229,12 +243,13 @@ def panMain():
     pass
 
 def cccMain():
-    csv_df, attr = raw_data.read_in_csv()
-    for sub_attr in raw_data.attributes:
-        arrange_sub_attr_data = csv_df[[sub_attr, '結論']].sort_values(by = '結論').sort_values(by = sub_attr) #排序過後的資料 > 只取該屬性跟結論
-        print(attr[sub_attr].caculate_attr(arrange_sub_attr_data))
-        # print(arrange_sub_attr_data)
-    # print(csv_df)
+    attr = raw_data.read_in_csv()
+    for sub_attr in attr:
+        print(attr[sub_attr].effect_attr_name)
+        print('attribute_info:')
+        print(attr[sub_attr].attr_info)
+        print('gainA')
+        print(attr[sub_attr].gainA)
 
 
 

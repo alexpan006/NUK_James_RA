@@ -222,15 +222,20 @@ class effect_attribute:
         return self.attr_info
 
 def main():
-    # test=raw_data(file_path="D:/NUK/建新RA/NUK_James_RA/觀測天氣之資料表.csv") pan
-    
+    cccMain()
+
+def panMain():
+    test=raw_data(file_path="D:/NUK/建新RA/NUK_James_RA/觀測天氣之資料表.csv")# pan
+    pass
+
+def cccMain():
     csv_df, attr = raw_data.read_in_csv()
     for sub_attr in raw_data.attributes:
         arrange_sub_attr_data = csv_df[[sub_attr, '結論']].sort_values(by = '結論').sort_values(by = sub_attr) #排序過後的資料 > 只取該屬性跟結論
         print(attr[sub_attr].caculate_attr(arrange_sub_attr_data))
         # print(arrange_sub_attr_data)
     # print(csv_df)
-    pass
+
 
 
 if __name__ == "__main__":

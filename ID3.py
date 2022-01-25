@@ -6,6 +6,18 @@ import pandas as pd
 import math
 from random import random
 
+from soupsieve import select
+
+
+'''
+2022.01.25--Pan
+1.read_in_csv那個函數要用self去拿class級別的variable,這樣才其他地方才吃的到
+2.阿然後你先改read_in_csv好惹,clean_data先不用用
+Noted:
+然後我發現最好在建構子的地方都把會出錯的variable都clear一下,這樣好像才不會出事,我也不知為啥
+
+
+'''
 
 '''
 0124 TODO before 0130
@@ -18,21 +30,23 @@ from random import random
 
 class clean_data:
     clean_source=pd.DataFrame()
-    def __init__(self,dataframe):
+    primary_keys=list()
+    def __init__(self,dataframe,primary_keys):
+        if(primary_keys!=None):
+            self.primary_keys=primary_keys #傳入primary key會是list
         self.clean_source=dataframe
     def export_result(self):
-        pass
+        print('primary_keys====>',self.primary_keys)
 
 
 class raw_data:
     class_info = 0.0  #類別訊息獲取量
-    attributes = {}  #建字典對到 effect attribute
     conclusions = [] #結論
     conclution_col = ""
     raw_source=pd.DataFrame()
     class_info=0.0  #類別訊息獲取量
     attributes={}  #建字典對到 effect attribute
-    primary_key=[] #唯一分辨的key
+    primary_keys=list() #唯一分辨的key
     clean_subsets=[] #其他的clean subset 裡面存 clean_data class
     unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
 
@@ -41,20 +55,23 @@ class raw_data:
     '''
     
     #建構子
-    def __init__(self,file_path=None,dataframe=None,primary_key=None):
+    def __init__(self,file_path=None,dataframe=None,primary_keys=None):
         '''
         先判定是否需要讀csv,若不用就直接用現有dataframe建立
         之後就先建立attri字典
-        
-        
         '''
+        self.attributes.clear() #清空attributes
+        self.primary_keys.clear() #清空primary keys
+        self.unclean_subsets.clear() #清空unclean_subsets
+        self.clean_subsets.clear() #清空clean_subsets
+        
         self.raw_source=dataframe
-        self.primary_key.append(primary_key)
+        if(primary_keys!=None):
+            self.primary_keys=primary_keys #傳入primary key會是list
         self.fake_read_in_attributes(file_path=file_path) #先建立attri字典
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
         self.extract_to_subsets()  #分離clean與unclean資料
-        # self.export_result()    #地回地回
         
     #遞迴的部分
     def export_result(self):
@@ -99,21 +116,22 @@ class raw_data:
         for unclean in temp_dict_series_dataframe_unclean.values():
             print(unclean)        
         '''
-        print('乾淨')
-        for clean in temp_dict_series_dataframe_clean.values():
-            print(clean)        
-        print('不乾淨')
-        for unclean in temp_dict_series_dataframe_unclean.values():
-            print(unclean)        
-        
-        # for clean in temp_dict_series_dataframe_clean.values(): #匯出clean data
-        #     self.clean_subsets.append(clean_data(clean))
-        # for unclean in temp_dict_series_dataframe_unclean.values(): #匯出unclean data,記得刪除第一航並加primary key
-        #     self.unclean_subsets.append(raw_data(dataframe=unclean.drop(columns=unclean.columns[0]),primary_key=unclean.columns[0]))
-        
-            
-                
-        pass
+        # print('乾淨')
+        # for clean in temp_dict_series_dataframe_clean.values():
+        #     print(clean)        
+        # print('不乾淨')
+        # for unclean in temp_dict_series_dataframe_unclean.values():
+        #     print(unclean)  
+                  
+        for clean in temp_dict_series_dataframe_clean.values(): #匯出clean data
+            temp_primary_k_clean=list(self.primary_keys)    #處理primary key
+            temp_primary_k_clean.append(clean[clean.columns[0]][0])
+            self.clean_subsets.append(clean_data(dataframe=clean,primary_keys=temp_primary_k_clean))
+        for unclean in temp_dict_series_dataframe_unclean.values(): #匯出unclean data,記得刪除第一航並加primary key(一個list)
+            temp_primary_k_unclean=list(self.primary_keys)  #處理primary key
+            temp_primary_k_unclean.append(unclean[unclean.columns[0]][0])
+            self.unclean_subsets.append(raw_data(file_path=None,dataframe=(unclean.drop(columns=unclean.columns[0])),primary_keys=temp_primary_k_unclean))
+        print('乾淨',len(self.clean_subsets),'不乾淨',len(self.unclean_subsets),self.primary_keys)    
     
     #排序gainA
     def sort_attri_order(self):
@@ -121,11 +139,12 @@ class raw_data:
         # for k,v in self.attributes.items(): #看gainA
         #     print(k,v.gainA)
     def reorder_raw_source(self):
+        # print('新order',list(self.attributes.keys()))
         newOrder=list(self.attributes.keys())
         newOrder.append(self.raw_source.columns[-1]) #加上結論
         self.raw_source=self.raw_source[newOrder]
         self.raw_source=self.raw_source.sort_values(self.raw_source.columns[0],ascending=True)
-        print('印reorder後的\n',self.raw_source.head(15)) #印reorder後的
+        # print('印reorder後的\n',self.raw_source.head(15)) #印reorder後的
     
     
     #測試用
@@ -135,9 +154,15 @@ class raw_data:
         #不用讀csv
         for col in self.raw_source.columns[:-1]: #結論不用讀
             self.attributes[col]=effect_attribute(name=col,con=list(),gainA=0)
-        print('印reorder前的\n',self.raw_source.head()) #印reorder前的
+        # print('印reorder前的\n',self.raw_source.head()) #印reorder前的
 
     
+    '''
+    2022.01.25 14:08
+    下面記得要用self,這樣才抓的到self.attributes字典
+    像raw_data.conclusions.append(result) 應該是 self.conclusions.append(result)
+    所以可能你之前會怪怪ㄉ就是因為這ㄍ
+    '''
     def read_in_csv(): #讀csv順便把attributes字典建立，記得用pandas讀csv
         df = pd.read_csv("./觀測天氣之資料表.csv") #讀檔
         #讀結論的col name
@@ -202,6 +227,11 @@ class effect_attribute:
         self.gainA = gainA
         self.con_num = len(con)
         
+    #測試用
+    def fake_data(self):
+        self.attr_info=random.random()
+        self.gainA=random.random()
+        
     def caculate_attr(self, data):
         
         data_sum = len(data) #資料總筆數
@@ -234,12 +264,22 @@ class effect_attribute:
             self.attr_info += (data_upper/data_sum)*temp_info
 
         self.gainA -= self.attr_info
+        
+        
 
 def main():
-    cccMain()
+    # cccMain()
+    panMain()
+    
 
 def panMain():
-    test=raw_data(file_path="D:/NUK/建新RA/NUK_James_RA/觀測天氣之資料表.csv")# pan
+    test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
+    # dep=1
+    # if(len(test.unclean_subsets)!=0):
+    #     print(dep)
+    #     dep+=1
+    # test.export_result()
+        
     pass
 
 def cccMain():

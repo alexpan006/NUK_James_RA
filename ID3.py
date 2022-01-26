@@ -1,22 +1,21 @@
 #coding=utf-8
-import operator
-from tkinter.tix import Tree
-from numpy import float64
 import pandas as pd
 import math
 from random import random
-
-from soupsieve import select
 
 
 '''
 2022.01.25--Pan
 1.read_in_csv那個函數要用self去拿class級別的variable,這樣才其他地方才吃的到
-2.阿然後你先改read_in_csv好惹,clean_data先不用用
+2.阿然後你先改read_in_csv好惹
+3.clean data 可以用 raw_data().export_result()拿到所有的primary_key.你可以看一夏#遞迴的部分
+  現在變成最一開始的raw_data裡面有所有的clean跟unclean資料,分別在clean_subsets跟unclean_subsets李
 Noted:
-然後我發現最好在建構子的地方都把會出錯的variable都clear一下,這樣好像才不會出事,我也不知為啥
-
-
+-->然後我發現最好在建構子的地方都把會出錯的variable都clear一下,這樣好像才不會出事,我也不知為啥
+-->上面那件事好像又有機會出事,我也不知道為啥
+-->然後我有加一個三種結論ㄉcsv,你可以試試看
+-->阿png那個有分類的過程,attribute排序的部分我都是預設的,紅線部分是分出來clean,藍線分出來是unclean
+-->阿你可以直接run,看個結果
 '''
 
 '''
@@ -29,12 +28,15 @@ Noted:
 
 
 class clean_data:
-    clean_source=pd.DataFrame()
+    '''
+    只記錄primary keys，然後會丟conclusion，用來算class distribution
+    阿conclusion你在自己用ㄍ
+    '''
     primary_keys=list()
-    def __init__(self,dataframe,primary_keys):
+    conclusions=list()
+    def __init__(self,primary_keys):
         if(primary_keys!=None):
             self.primary_keys=primary_keys #傳入primary key會是list
-        self.clean_source=dataframe
     def export_result(self):
         print('primary_keys====>',self.primary_keys)
 
@@ -46,13 +48,12 @@ class raw_data:
     raw_source=pd.DataFrame()
     class_info=0.0  #類別訊息獲取量
     attributes={}  #建字典對到 effect attribute
-    primary_keys=list() #唯一分辨的key
-    clean_subsets=[] #其他的clean subset 裡面存 clean_data class
-    unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
-
     '''
     attributes['天氣']=effect_attribute('天氣')
     '''
+    primary_keys=list() #唯一分辨的key
+    clean_subsets=[] #其他的clean subset 裡面存 clean_data class
+    unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
     
     #建構子
     def __init__(self,file_path=None,dataframe=None,primary_keys=None):
@@ -62,8 +63,8 @@ class raw_data:
         '''
         self.attributes.clear() #清空attributes
         self.primary_keys.clear() #清空primary keys
-        self.unclean_subsets.clear() #清空unclean_subsets
-        self.clean_subsets.clear() #清空clean_subsets
+        # self.unclean_subsets.clear() #清空unclean_subsets
+        # self.clean_subsets.clear() #清空clean_subsets
         
         self.raw_source=dataframe
         if(primary_keys!=None):
@@ -75,15 +76,15 @@ class raw_data:
         
     #遞迴的部分
     def export_result(self):
-        if(len(self.unclean_subsets)!=0):
-            for unclean_subset in self.unclean_subsets:
-                unclean_subset.export_result()
-        else:
-            for clean_subset in self.clean_subsets:
-                clean_subset.export_result()
+        for clean_subset in self.clean_subsets:
+            print('primary key===>',clean_subset.primary_keys)    
+        print('乾淨有',len(self.clean_subsets),'筆,','不乾淨',len(self.unclean_subsets),'筆') #測試用
     
     #把東西丟到subset裡
     def extract_to_subsets(self):
+        '''
+        分離unclean跟clean資料
+        '''
         temp_dict_to_check={}
         temp_dict_to_cast={}
         temp_dict_series_dataframe_clean={}
@@ -107,6 +108,7 @@ class raw_data:
                     temp_dict_series_dataframe_unclean[row[0]]=row.to_frame(0).T
                 else:
                     temp_dict_series_dataframe_unclean[row[0]]=temp_dict_series_dataframe_unclean[row[0]].append(row.to_frame(0).T,ignore_index=True)
+        
         '''
         下面是可以用來測試,分別看現在乾淨資料與不乾淨資料
         print('乾淨')
@@ -116,22 +118,24 @@ class raw_data:
         for unclean in temp_dict_series_dataframe_unclean.values():
             print(unclean)        
         '''
-        # print('乾淨')
-        # for clean in temp_dict_series_dataframe_clean.values():
-        #     print(clean)        
-        # print('不乾淨')
-        # for unclean in temp_dict_series_dataframe_unclean.values():
-        #     print(unclean)  
-                  
-        for clean in temp_dict_series_dataframe_clean.values(): #匯出clean data
-            temp_primary_k_clean=list(self.primary_keys)    #處理primary key
-            temp_primary_k_clean.append(clean[clean.columns[0]][0])
-            self.clean_subsets.append(clean_data(dataframe=clean,primary_keys=temp_primary_k_clean))
-        for unclean in temp_dict_series_dataframe_unclean.values(): #匯出unclean data,記得刪除第一航並加primary key(一個list)
-            temp_primary_k_unclean=list(self.primary_keys)  #處理primary key
-            temp_primary_k_unclean.append(unclean[unclean.columns[0]][0])
-            self.unclean_subsets.append(raw_data(file_path=None,dataframe=(unclean.drop(columns=unclean.columns[0])),primary_keys=temp_primary_k_unclean))
-        print('乾淨',len(self.clean_subsets),'不乾淨',len(self.unclean_subsets),self.primary_keys)    
+        if(len(temp_dict_series_dataframe_clean) != 0):
+            for clean in dict(temp_dict_series_dataframe_clean).values():
+                temp_primary_k_clean=list(self.primary_keys)    #處理primary key
+                temp_primary_k_clean.append(clean[clean.columns[0]][0])
+                self.clean_subsets.append(clean_data(primary_keys=temp_primary_k_clean))
+                
+            # for clean_subset in self.clean_subsets:
+            #     print('key',clean_subset.primary_keys)    
+                    
+        if(len(temp_dict_series_dataframe_unclean) != 0):
+            for unclean in dict(temp_dict_series_dataframe_unclean).values(): #匯出unclean data,記得刪除第一航並加primary key(一個list)
+                temp_primary_k_unclean=list(self.primary_keys)  #處理primary key
+                temp_primary_k_unclean.append(unclean[unclean.columns[0]][0])
+                self.unclean_subsets.append(raw_data(file_path=None,dataframe=(unclean.drop(columns=unclean.columns[0])),primary_keys=temp_primary_k_unclean))
+            
+            # for clean_subset in self.clean_subsets:
+            #     print('key',clean_subset.primary_keys)    
+        # print('乾淨',len(self.clean_subsets),'不乾淨',len(self.unclean_subsets),self.primary_keys)    
     
     #排序gainA
     def sort_attri_order(self):
@@ -274,11 +278,7 @@ def main():
 
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
-    # dep=1
-    # if(len(test.unclean_subsets)!=0):
-    #     print(dep)
-    #     dep+=1
-    # test.export_result()
+    test.export_result()
         
     pass
 

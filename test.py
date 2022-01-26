@@ -1,5 +1,4 @@
-ha=list()
-ha.append('lalal')
+test={'1':1,'2':2}
 
-ta=list(ha)
-print(ta)
+print(len(test))
+

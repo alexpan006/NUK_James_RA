@@ -1,4 +1,6 @@
 #coding=utf-8
+from email import policy
+from isort import file
 import pandas as pd
 import math
 from random import random
@@ -13,14 +15,14 @@ from random import random
 Noted:
 -->然後我發現最好在建構子的地方都把會出錯的variable都clear一下,這樣好像才不會出事,我也不知為啥
 -->上面那件事好像又有機會出事,我也不知道為啥
--->然後我有加一個三種結論ㄉcsv,你可以試試看
+-->然後我有加一個三種結論ㄉcsv,你可以試試看      >> test過了基本上是對的我沒發現啥錯啦
 -->阿png那個有分類的過程,attribute排序的部分我都是預設的,紅線部分是分出來clean,藍線分出來是unclean
 -->阿你可以直接run,看個結果
 '''
 
 '''
 0124 TODO before 0130
->>修改read_in_csv()>>傳入值可能是filePath/dataFrame>>要做不同的事
+>>修改read_in_csv()>>傳入值可能是filePath/dataFrame>>要做不同的事 //// DONE >> 我把它改叫load_data()ㄌ，阿但是我不確定他會不會出事
 >>clean_data產出policy>>policy包含effect, deep, simplicity, reliability, support, class distribution
 >>修改結論>>最後一行必為結論>>結論可能不止2種 ///// DONE >> 我覺得啦，感覺沒啥毛病但我沒有第3種結論可以試，就是邏輯上應該沒事沒事
 >>建立effect_attributes即計算gainA ///// DONE
@@ -34,17 +36,34 @@ class clean_data:
     '''
     primary_keys=list()
     conclusions=list()
-    def __init__(self,primary_keys):
+    data = pd.DataFrame()
+    policy = pd.DataFrame()
+
+    def __init__(self,primary_keys=None):
         if(primary_keys!=None):
             self.primary_keys=primary_keys #傳入primary key會是list
+
     def export_result(self):
         print('primary_keys====>',self.primary_keys)
+        r_num = len(self.policy) + 1
+        for subset in self.primary_keys:
+            deep = len(subset)
+            '''
+            判斷是哪個effect的結果、結論(class)是哪一個、有幾筆資料支持(support)、reliability(這啥我忘ㄌ)
+            class distribution(有前面ㄉ好像就能算ㄌ)、simplicity(support/deep)
+            好像來不及惹我玩回來再寫或哥你來QQ
+            '''
+            print(subset)
+            r_num += 1
+            
+        
+        
 
 
 class raw_data:
     class_info = 0.0  #類別訊息獲取量
     conclusions = [] #結論
-    conclution_col = ""
+    conclusion_col = ""
     raw_source=pd.DataFrame()
     class_info=0.0  #類別訊息獲取量
     attributes={}  #建字典對到 effect attribute
@@ -77,6 +96,8 @@ class raw_data:
     #遞迴的部分
     def export_result(self):
         for clean_subset in self.clean_subsets:
+            #TEST!!
+            clean_data.primary_keys.append(clean_subset.primary_keys)
             print('primary key===>',clean_subset.primary_keys)    
         print('乾淨有',len(self.clean_subsets),'筆,','不乾淨',len(self.unclean_subsets),'筆') #測試用
     
@@ -167,43 +188,69 @@ class raw_data:
     像raw_data.conclusions.append(result) 應該是 self.conclusions.append(result)
     所以可能你之前會怪怪ㄉ就是因為這ㄍ
     '''
-    def read_in_csv(): #讀csv順便把attributes字典建立，記得用pandas讀csv
-        df = pd.read_csv("./觀測天氣之資料表.csv") #讀檔
+    #載入df回傳effect_attributes
+    def load_data(self, file_path = None, data = None):
+        if file_path == None:
+            df = data
+        else:
+            df = pd.read_csv(file_path) #讀檔
+            # 設定clean_data的data
+            clean_data.data = df
+            # 初始化policy(export)的dataframe
+            clean_data.policy['RID'] = []
+            for effect in df.columns[:-1]:
+                clean_data.policy[effect] = []
+            clean_data.policy['Class'] = []
+            clean_data.policy['Deep'] = []
+            clean_data.policy['Support'] = []
+            clean_data.policy['Reliability'] = []
+            clean_data.policy['Class Distribution'] = []
+            clean_data.policy['Simplicity'] = []
+                
+        
+        
         #讀結論的col name
         for col in df.columns[-1:]:
-            raw_data.conclution_col = col #記錄結論的col name
+            self.s_col = col #記錄結論的col name
         
-        con = df[raw_data.conclution_col].sort_values()
+        con = df[self.s_col].sort_values()
         data_sum = con.count() #資料總數
         con_type = con.T.drop_duplicates() #結論有哪幾種
         for result in con_type: #把結論存起來
-            raw_data.conclusions.append(result)
-        con_type_num = len(raw_data.conclusions)
+            self.conclusions.append(result)
+        # 設定clean_data裡的conclusions
+        clean_data.conclusions = self.conclusions
+        con_type_num = len(self.conclusions)
         # 計算class_info
         for count in range(0,con_type_num):
             upper = con.value_counts()[count]
-            raw_data.class_info -= (upper/data_sum)*math.log2(upper/data_sum)
+            self.class_info -= (upper/data_sum)*math.log2(upper/data_sum)
         #建立effect_attribute並計算gainA
         for col in df.columns[:-1]:
             #建立effect_attribute
-            raw_data.attributes[col] = effect_attribute(name = col, con = raw_data.conclusions, gainA = raw_data.class_info)
+            self.attributes[col] = effect_attribute(name = col, con = self.conclusions, gainA = self.class_info)
             #計算gainA和attr_info
             #先排序資料>>只取結論跟該屬性
-            arrange_sub_attr_data = df[[col, raw_data.conclution_col]].sort_values(by = raw_data.conclution_col).sort_values(by = col)
+            arrange_sub_attr_data = df[[col, self.s_col]].sort_values(by = self.s_col).sort_values(by = col)
             #call function進行計算
-            raw_data.attributes[col].caculate_attr(data = arrange_sub_attr_data)
+            self.attributes[col].caculate_attr(data = arrange_sub_attr_data)
+            # 用ㄌself之後print出來他們還是都存在同一個attr_subset裡ㄟ，在搞在搞
+            # print(self.attributes[col].attr_subset)
+            '''
+            就那個attr_subset還是頑固
+            這裡在搞但不影響結果標出來給你看ㄍ
+            '''
 
 
-        print(raw_data.class_info) #印出類別資訊量for check check!
-        return raw_data.attributes
+        print(self.class_info) #印出類別資訊量for check check!
+        return self.attributes
 
-#公式 >>> [-= type/all(log2(type/all))]
     
 class effect_attribute:
     effect_attr_name = ""    #屬性名稱
     attr_info = 0.0  #屬性訊息量
     gainA = 0.0   #屬性訊息獲取量
-    conclutions = []   #結論
+    ss = []   #結論
     con_num = 0 #存結論數量
     attr_subset = {}  #屬性對應結論
     '''
@@ -227,7 +274,7 @@ class effect_attribute:
     '''
     def __init__(self, name, con, gainA):
         self.effect_attr_name = name
-        self.conclutions = con
+        self.ss = con
         self.gainA = gainA
         self.con_num = len(con)
         
@@ -248,7 +295,7 @@ class effect_attribute:
         for type in data_type: #初始化屬性結論
             temp_info = 0.0
             data_upper = data_type_num[type]
-            con = self.conclutions
+            con = self.ss
             
             type_con =[]
             type_sum = 0
@@ -262,7 +309,7 @@ class effect_attribute:
             self.attr_subset[type] = type_con
             for result in self.attr_subset[type]:
                 if result == 0: #如果沒有那種結果就跳過，不然算出來會出事
-                    break
+                    pass
                 else:
                     temp_info -= (result/type_sum)*math.log2(result/type_sum)
             self.attr_info += (data_upper/data_sum)*temp_info
@@ -272,8 +319,8 @@ class effect_attribute:
         
 
 def main():
-    # cccMain()
     panMain()
+    cccMain()
     
 
 def panMain():
@@ -283,14 +330,18 @@ def panMain():
     pass
 
 def cccMain():
-    attr = raw_data.read_in_csv()
+    data = raw_data(file_path = './觀測天氣之資料表.csv')
+    # test = pd.read_csv('./觀測天氣之資料表.csv')
+    # attr = data.load_data(file_path = './觀測天氣之資料表.csv')
+    attr = data.load_data(file_path = './觀測天氣之資料表.csv')
     for sub_attr in attr:
         print(attr[sub_attr].effect_attr_name)
         print('attribute_info:')
         print(attr[sub_attr].attr_info)
         print('gainA')
         print(attr[sub_attr].gainA)
-
+    gaga = clean_data()
+    print(gaga.export_result())
 
 
 if __name__ == "__main__":

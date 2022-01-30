@@ -1,5 +1,6 @@
 #coding=utf-8
 from email import policy
+from operator import index
 from isort import file
 import pandas as pd
 import math
@@ -44,6 +45,7 @@ class clean_data:
     deep=0.0
     clean_data=pd.DataFrame()
     result={} #最終輸出dict 藥用dict to 
+    policy = pd.DataFrame()
 
     def __init__(self,primary_keys=None,clean_data=None,original_header=None,conclusions=None,support=None):
         self.primary_keys=primary_keys #傳入primary key會是dict
@@ -51,6 +53,10 @@ class clean_data:
         self.clean_data=clean_data #是pd.DataFrame()
         self.conclusions=conclusions
         self.support=support #Support
+        
+        for col in pd.read_csv('output.csv').columns: 
+            self.policy[col] = [""]
+
     def cal_all(self):
         self.deep=len(self.primary_keys)-1 #Deep
         self.simplicity=self.support/self.deep #Simplicity
@@ -92,10 +98,16 @@ class clean_data:
         self.result["Support"]=self.support
         self.result["Reliability"]=self.reliability
         self.result["Class Distribution"]=self.class_distribution
-        self.result["Simpicity"]=self.simplicity
+        self.result["Simplicity"]=self.simplicity
         
-        print(self.result)
-        
+        # print(self.result)
+        for key in self.result.keys():
+            if key == '結論':
+                self.policy['Class'] = self.result[key]
+            else:
+                self.policy[key] = self.result[key]
+        self.policy.to_csv('output.csv', mode = 'a', header = False, index = False)
+        # print(self.policy)
             
         
         
@@ -261,20 +273,21 @@ class raw_data:
             self.raw_source = data
         else:
             self.raw_source = pd.read_csv(file_path) #讀檔
-            '''
+            policy = pd.DataFrame()
             # 設定clean_data的data
-            clean_data.data = self.raw_source
+            # clean_data.data = self.raw_source
             # 初始化policy(export)的dataframe
-            clean_data.policy['RID'] = []
+            policy['RID'] = []
             for effect in self.raw_source.columns[:-1]:
-                clean_data.policy[effect] = []
-            clean_data.policy['Class'] = []
-            clean_data.policy['Deep'] = []
-            clean_data.policy['Support'] = []
-            clean_data.policy['Reliability'] = []
-            clean_data.policy['Class Distribution'] = []
-            clean_data.policy['Simplicity'] = []
-            '''
+                policy[effect] = []
+            policy['Class'] = []
+            policy['Deep'] = []
+            policy['Support'] = []
+            policy['Reliability'] = []
+            policy['Class Distribution'] = []
+            policy['Simplicity'] = []
+            policy.to_csv('output.csv', index = False)
+
         self.original_header=self.raw_source.columns
         self.s_col = self.raw_source.columns[-1] #直接這樣就好惹  記錄結論的欄位名
         counter=0 #用來算資料總數

@@ -1,6 +1,7 @@
 #coding=utf-8
 from email import policy
 from operator import index
+import re
 from isort import file
 import pandas as pd
 import math
@@ -54,10 +55,16 @@ class clean_data:
         self.conclusions=conclusions
         self.support=support #Support
         
+        
         for col in pd.read_csv('output.csv').columns: 
             self.policy[col] = [""]
+        
 
-    def cal_all(self):
+    def cal_all(self,result_filepath):
+        #處理最後輸出位置
+        new_path=result_filepath.replace('.csv','-分析後.csv')
+        
+        
         self.deep=len(self.primary_keys)-1 #Deep
         self.simplicity=self.support/self.deep #Simplicity
         
@@ -82,17 +89,6 @@ class clean_data:
             self.result[k]=v
         
         # 全部加到 result dict李
-        '''
-        勝這裡
-        # for k,v in self.primary_keys.items():
-        #     # print('-->',k)
-        #     for header in self.original_header:
-        #         print(header)
-        #         if(k==header):
-        #             self.result[k]=v
-        #         else:
-        #             self.result[header]=None
-        '''
 
         self.result["Deep"]=self.deep
         self.result["Support"]=self.support
@@ -100,31 +96,20 @@ class clean_data:
         self.result["Class Distribution"]=self.class_distribution
         self.result["Simplicity"]=self.simplicity
         
-        # print(self.result)
         for key in self.result.keys():
             if key == '結論':
                 self.policy['Class'] = self.result[key]
             else:
                 self.policy[key] = self.result[key]
-        self.policy.to_csv('output.csv', mode = 'a', header = False, index = False)
-        # print(self.policy)
+        self.policy.to_csv(new_path, mode = 'a', header = False, index = False)
             
         
         
         
-    def export_result(self):
-        self.cal_all()
-        # print('primary_keys====>',self.primary_keys)
-        # r_num = len(self.policy) + 1
-        # for subset in self.primary_keys:
-        #     deep = len(subset)
-        '''
-        判斷是哪個effect的結果、結論(class)是哪一個、有幾筆資料支持(support)、reliability(這啥我忘ㄌ)
-        class distribution(有前面ㄉ好像就能算ㄌ)、simplicity(support/deep)
-        好像來不及惹我玩回來再寫或哥你來QQ
-        '''
-            # print(subset)
-            # r_num += 1
+    def export_result(self,result_filepath):
+        #處理最後輸出位置
+        new_path=result_filepath.replace('.csv','-分析後.csv')
+        self.cal_all(result_filepath)
             
         
         
@@ -167,13 +152,13 @@ class raw_data:
         self.extract_to_subsets()  #分離clean與unclean資料
         
     #遞迴的部分
-    def export_result(self):
+    def export_result(self,result_filepath):
+        
         for clean_subset in self.clean_subsets:
-            #TEST!!
-            # clean_data.primary_keys.append(clean_subset.primary_keys)
-            # print('primary key===>',clean_subset.primary_keys,clean_subset.support) 
-            clean_subset.export_result()
-        print('乾淨有',len(self.clean_subsets),'筆,','不乾淨',len(self.unclean_subsets),'筆') #測試用
+            clean_subset.export_result(result_filepath)
+        result_filepath=result_filepath.replace('.csv','-分析後.csv')
+        return result_filepath
+        # print('乾淨有',len(self.clean_subsets),'筆,','不乾淨',len(self.unclean_subsets),'筆') #測試用
     
     #把東西丟到subset裡
     def extract_to_subsets(self):
@@ -502,3 +487,25 @@ def cccMain():
 
 if __name__ == "__main__":
     main()
+    
+def csvValidCheck(filename):
+    rowSize=0
+    standardRowSize=0
+    with open(filename,'r',encoding="utf-8-sig") as f1:
+        index=1
+        lines=f1.readlines()
+        for line in lines:
+            temp=line.strip().split(',')
+            if(index==1):
+                rowSize=len(temp)
+            else:
+                standardRowSize=len(temp)
+                if(rowSize!=standardRowSize):
+                    return False,"csv檔第  "+str(index)+"  行的欄位數與其他行不一致\n"
+                if(re.fullmatch(r'(\D*)+(\d*)',temp[-1],flags=0)== None):
+                    return False,"csv檔第  "+str(index)+"  行的歸納結果不符合命名規則\n歸納結果的命名規則為:任意字元(不可以穿插數字)+數字\n"
+                for item in temp:
+                    if(item=="" or item==None):
+                        return False,"csv檔第  "+str(index)+"  行有欄位為空\n"
+            index+=1
+        return True,"csv檔檢查通過,符合格式\n"

@@ -56,7 +56,7 @@ class clean_data:
         self.support=support #Support
         
         
-        for col in pd.read_csv('output.csv').columns: 
+        for col in pd.read_csv('中繼資料.csv').columns: 
             self.policy[col] = [""]
         
 
@@ -274,7 +274,7 @@ class raw_data:
             
             output_filename = file_path.replace('.csv','-分析後.csv')
             policy.to_csv(output_filename, index = False)
-            policy.to_csv('output.csv', index = False)
+            policy.to_csv('中繼資料.csv', index = False)
 
         self.original_header=self.raw_source.columns
         self.s_col = self.raw_source.columns[-1] #直接這樣就好惹  記錄結論的欄位名

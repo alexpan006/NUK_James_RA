@@ -108,7 +108,7 @@ class clean_data:
         
     def export_result(self,result_filepath):
         #處理最後輸出位置
-        new_path=result_filepath.replace('.csv','-分析後.csv')
+        new_path = result_filepath.replace('.csv','-分析後.csv')
         self.cal_all(result_filepath)
             
         
@@ -271,6 +271,9 @@ class raw_data:
             policy['Reliability'] = []
             policy['Class Distribution'] = []
             policy['Simplicity'] = []
+            
+            output_filename = file_path.replace('.csv','-分析後.csv')
+            policy.to_csv(output_filename, index = False)
             policy.to_csv('output.csv', index = False)
 
         self.original_header=self.raw_source.columns
@@ -481,8 +484,8 @@ def cccMain():
         print(attr[sub_attr].attr_info)
         print('gainA')
         print(attr[sub_attr].gainA)
-    gaga = clean_data()
-    print(gaga.export_result())
+    clean_data = clean_data()
+    print(clean_data.export_result())
 
 
 if __name__ == "__main__":

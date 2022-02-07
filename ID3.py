@@ -9,6 +9,21 @@ from random import random
 
 
 '''
+2022.02.07--Pan 開工大吉
+1.我在每一個class的建構子都加了重設所有參數的method,如果後來你有加新的class variable,
+  記得要加到resest_all函示裡.
+2.解決了之前怪怪ㄉ部分惹,現在要用遞迴的方式才能取出所有的priamry_keys了,拿gain也是用遞迴去
+unclean_subsets裡面拿raw_data class 的東東.
+3.阿你要用的部分就是:   
+    (1)RID處理一下
+    (2)中繼資料.csv看可不可以用掉
+    (3)等建新說每個分離前的gainA要以啥樣子的csv匯出,你再用個ㄅㄟ
+
+'''
+
+
+
+'''
 2022.01.25--Pan
 1.read_in_csv那個函數要用self去拿class級別的variable,這樣才其他地方才吃的到
 2.阿然後你先改read_in_csv好惹
@@ -36,7 +51,7 @@ class clean_data:
     只記錄primary keys，然後會丟conclusion，用來算class distribution
     阿conclusion你在自己用ㄍ
     '''
-    original_header=list
+    original_header=list()
     primary_keys=dict() #主key
     conclusions=list()  #結論
     support=0.0 #
@@ -49,6 +64,9 @@ class clean_data:
     policy = pd.DataFrame()
 
     def __init__(self,primary_keys=None,clean_data=None,original_header=None,conclusions=None,support=None):
+        self.reset_all()
+        self.policy= pd.DataFrame()
+        self.clean_data=pd.DataFrame()
         self.primary_keys=primary_keys #傳入primary key會是dict
         self.original_header=original_header
         self.clean_data=clean_data #是pd.DataFrame()
@@ -58,6 +76,19 @@ class clean_data:
         
         for col in pd.read_csv('中繼資料.csv').columns: 
             self.policy[col] = [""]
+    #Reset所有參數
+    def reset_all(self):
+        self.original_header=list()
+        self.primary_keys=dict() #主key
+        self.conclusions=list()  #結論
+        self.support=0.0 #
+        self.reliability=0.0
+        self.class_distribution="" #ex: "4,0"
+        self.simplicity=0.0
+        self.deep=0.0
+        self.clean_data=pd.DataFrame()
+        self.result={} #最終輸出dict 藥用dict to 
+        self.policy = pd.DataFrame()
         
 
     def cal_all(self,result_filepath):
@@ -101,7 +132,9 @@ class clean_data:
                 self.policy['Class'] = self.result[key]
             else:
                 self.policy[key] = self.result[key]
-        self.policy.to_csv(new_path, mode = 'a', header = False, index = False)
+                
+                
+        self.policy.to_csv(new_path, mode = 'a', header = False, index = False) #輸出用append的方式家道csv
             
         
         
@@ -136,31 +169,37 @@ class raw_data:
         先判定是否需要讀csv,若不用就直接用現有dataframe建立
         之後就先建立attri字典
         '''
-        self.attributes.clear() #清空attributes
-        self.primary_keys.clear() #清空primary keys
-        # self.unclean_subsets.clear() #清空unclean_subsets
-        # self.clean_subsets.clear() #清空clean_subsets
-        
+        self.reset_all()
+        #直接相等會讓primary_keys的型態變成None
         if(primary_keys!=None):
             self.primary_keys=primary_keys #傳入primary key會是dict
-        # self.fake_read_in_attributes(file_path=file_path,dataframe=dataframe) #先建立attri字典
         self.load_data(file_path=file_path,data=dataframe)
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
-        
-        # print(self.raw_source)
         self.extract_to_subsets()  #分離clean與unclean資料
+    #Reset所有參數
+    def reset_all(self):
+        self.class_info = 0.0  #類別訊息獲取量
+        self.conclusions = {} #結論 ex: {好:2,不好:5}
+        self.conclusion_col = ""
+        self.raw_source=pd.DataFrame()
+        self.class_info=0.0  #類別訊息獲取量
+        self.attributes={}  #建字典對到 effect attribute
+        self.original_header=list()
+        self.primary_keys=dict() #唯一分辨的key
+        self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
+        self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
         
     #遞迴的部分
     def export_result(self,result_filepath):
-        
+        for unclean_subset in self.unclean_subsets:
+            unclean_subset.export_result(result_filepath)
         for clean_subset in self.clean_subsets:
             clean_subset.export_result(result_filepath)
         result_filepath=result_filepath.replace('.csv','-分析後.csv')
         return result_filepath
-        # print('乾淨有',len(self.clean_subsets),'筆,','不乾淨',len(self.unclean_subsets),'筆') #測試用
     
-    #把東西丟到subset裡
+    #分離unclean跟clean資料
     def extract_to_subsets(self):
         '''
         分離unclean跟clean資料
@@ -224,34 +263,6 @@ class raw_data:
         self.raw_source=self.raw_source[newOrder]
         self.raw_source=self.raw_source.sort_values(self.raw_source.columns[0],ascending=True)
     
-    
-    #測試用
-    def fake_read_in_attributes(self,file_path=None,dataframe=None):
-        if(file_path!=None):    #要讀csv
-            self.raw_source=pd.read_csv(file_path)
-        else:#不用讀csv
-            self.raw_source=dataframe
-        for col in self.raw_source.columns[:-1]: #結論不用讀
-            self.attributes[col]=effect_attribute(name=col,con=list(),gainA=0)
-            
-        # for k,v in self.attributes.items():
-        #     print(k,v.gainA)
-        # print('印reorder前的\n',self.raw_source.head()) #印reorder前的
-
-    
-    '''
-    2022.01.25 14:08
-    下面記得要用self,這樣才抓的到self.attributes字典
-    像raw_data.conclusions.append(result) 應該是 self.conclusions.append(result)
-    所以可能你之前會怪怪ㄉ就是因為這ㄍ
-    '''
-    
-    '''
-    0130
-    ㄟㄟ你要用self.raw_source=pd.read_csv不然其他地方要用raw_data會吃不到
-    
-    '''
-    
     #載入df回傳effect_attributes
     def load_data(self, file_path = None, data = None):
         if file_path == None: #不用讀csv
@@ -290,44 +301,6 @@ class raw_data:
         self.class_info=self.cal_i(list(self.conclusions.values())) #算類別訊息輛
         for col in self.raw_source.columns[:-1]:
             self.attributes[col]=effect_attribute(name=col,conclusion=list(self.conclusions.keys()),gainA=self.class_info,dataframe=self.raw_source[[col,self.raw_source.columns[-1]]])
-        '''
-        #讀結論的col name
-        for col in self.raw_source.columns[-1:]:
-            self.s_col = col #記錄結論的col name
-            
-        con = self.raw_source[self.s_col].sort_values()
-        data_sum = con.count() #資料總數
-        con_type = con.T.drop_duplicates() #結論有哪幾種
-        for result in con_type: #把結論存起來
-            self.conclusions.append(result)
-        print(self.conclusions)
-        
-        # 設定clean_data裡的conclusions
-        clean_data.conclusions = self.conclusions
-        con_type_num = len(self.conclusions)
-        # 計算class_info
-        for count in range(0,con_type_num):
-            upper = con.value_counts()[count]
-            self.class_info -= (upper/data_sum)*math.log2(upper/data_sum)
-        #建立effect_attribute並計算gainA
-        for col in self.raw_source.columns[:-1]:
-            #建立effect_attribute
-            self.attributes[col] = effect_attribute(name = col, con = self.conclusions, gainA = self.class_info)
-            #計算gainA和attr_info
-            #先排序資料>>只取結論跟該屬性
-            arrange_sub_attr_data = self.raw_source[[col, self.s_col]].sort_values(by = self.s_col).sort_values(by = col)
-            #call function進行計算
-            self.attributes[col].caculate_attr(data = arrange_sub_attr_data)
-            # 用ㄌself之後print出來他們還是都存在同一個attr_subset裡ㄟ，在搞在搞
-            # print(self.attributes[col].attr_subset)
-        '''
-        '''
-            就那個attr_subset還是頑固
-            這裡在搞但不影響結果標出來給你看ㄍ
-        '''
-        '''
-        return self.attributes
-        '''    
     def cal_i(self,x):
         '''
         用來算 I( X , Y )
@@ -347,7 +320,6 @@ class raw_data:
     
 class effect_attribute:
     con_num = 0 #存結論數量
-    
     ss = []   #結論
     attr_subset = {}  #屬性對應結論
     parent_gainA = 0.0   #上層屬性訊息獲取量
@@ -376,18 +348,30 @@ class effect_attribute:
 
     '''
     def __init__(self, name, conclusion, gainA,dataframe):
-        self.attr_subset.clear()
+        
+        self.attr_subset.clear() #0207
+        
+        self.reset_all() 
+        
+        
         self.effect_attr_name = name
         self.ss = conclusion
         self.parent_gainA = gainA
         self.con_num = len(conclusion)
         self.attr_data=dataframe
         self.caculate_attr()
-        
-    #測試用
-    def fake_data(self):
-        self.attr_info=random.random()
-        self.gainA=random.random()
+    
+    def reset_all(self):
+        self.con_num = 0 #存結論數量
+        self.ss = []   #結論
+        self.attr_subset = {}  #屬性對應結論
+        self.parent_gainA = 0.0   #上層屬性訊息獲取量
+        self.attr_info = 0.0  #屬性訊息量
+        self.effect_attr_name = ""    #屬性名稱
+        self.attr_data=pd.DataFrame() 
+        self.gainA=0.0
+    
+    
         
     def cal_i(self,x):
         '''
@@ -427,38 +411,6 @@ class effect_attribute:
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
         self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
         
-        '''
-        data_sum = len(data) #資料總筆數
-        attr_data = data[self.effect_attr_name] #屬性資料
-        data_type = attr_data.drop_duplicates() #取得屬性資料的種類
-        attr_con = data.value_counts() #屬性+結論的個別總數
-        
-        data_type_num = data[self.effect_attr_name].value_counts() #屬性資料的個別總數 （有 9 無 0)
-
-        for type in data_type: #初始化屬性結論
-            temp_info = 0.0
-            data_upper = data_type_num[type]
-            con = self.ss
-            
-            type_con =[]
-            type_sum = 0
-            for idx in range(0,self.con_num):
-                type_con.append(attr_con[type].get(con[idx]))
-                #修正
-                if type_con[idx] == None:
-                    type_con[idx] = 0
-                type_sum += type_con[idx]
-
-            self.attr_subset[type] = type_con
-            for result in self.attr_subset[type]:
-                if result == 0: #如果沒有那種結果就跳過，不然算出來會出事
-                    pass
-                else:
-                    temp_info -= (result/type_sum)*math.log2(result/type_sum)
-            self.attr_info += (data_upper/data_sum)*temp_info
-
-        self.gainA -= self.attr_info
-        '''
         
         
 
@@ -469,28 +421,30 @@ def main():
 
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
-    test.export_result()
+    test.export_result("./觀測天氣之資料表---測試匯出.csv")
         
     pass
 
-def cccMain():
-    data = raw_data(file_path = './觀測天氣之資料表.csv')
-    # test = pd.read_csv('./觀測天氣之資料表.csv')
-    # attr = data.load_data(file_path = './觀測天氣之資料表.csv')
-    attr = data.load_data(file_path = './觀測天氣之資料表.csv')
-    for sub_attr in attr:
-        print(attr[sub_attr].effect_attr_name)
-        print('attribute_info:')
-        print(attr[sub_attr].attr_info)
-        print('gainA')
-        print(attr[sub_attr].gainA)
-    clean_data = clean_data()
-    print(clean_data.export_result())
+# def cccMain():
+#     data = raw_data(file_path = './觀測天氣之資料表.csv')
+#     # test = pd.read_csv('./觀測天氣之資料表.csv')
+#     # attr = data.load_data(file_path = './觀測天氣之資料表.csv')
+#     attr = data.load_data(file_path = './觀測天氣之資料表.csv')
+#     for sub_attr in attr:
+#         print(attr[sub_attr].effect_attr_name)
+#         print('attribute_info:')
+#         print(attr[sub_attr].attr_info)
+#         print('gainA')
+#         print(attr[sub_attr].gainA)
+#     clean_data = clean_data()
+#     print(clean_data.export_result())
 
 
 if __name__ == "__main__":
     main()
-    
+
+
+#檢查CSV是否符合規則
 def csvValidCheck(filename):
     rowSize=0
     standardRowSize=0

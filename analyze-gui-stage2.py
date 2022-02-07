@@ -1,5 +1,6 @@
 #encoding=utf8
 from os import error, stat
+from time import sleep, time
 import tkinter as tk
 from tkinter.constants import BOTTOM
 from tkinter.filedialog import askopenfilename, test
@@ -42,6 +43,7 @@ class analyzeGui:
                 self.writeToMiniConsole(err)
         else:
             self.writeToMiniConsole('原始csv不符合格式:\n'+result)
+        self.writeToMiniConsole('請重新開啟本程式,否則將出現錯誤\n')
     def onChange(self,event):
         self.rule.set(event.widget.get("end-1c linestart", "end-1c"))   
     def on_closing(self): 

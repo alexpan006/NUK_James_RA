@@ -37,15 +37,6 @@ Noted:
 -->阿你可以直接run,看個結果
 '''
 
-'''
-0124 TODO before 0130
->>修改read_in_csv()>>傳入值可能是filePath/dataFrame>>要做不同的事 //// DONE >> 我把它改叫load_data()ㄌ，阿但是我不確定他會不會出事
->>clean_data產出policy>>policy包含effect, deep, simplicity, reliability, support, class distribution
->>修改結論>>最後一行必為結論>>結論可能不止2種 ///// DONE >> 我覺得啦，感覺沒啥毛病但我沒有第3種結論可以試，就是邏輯上應該沒事沒事
->>建立effect_attributes即計算gainA ///// DONE
-'''
-
-
 class clean_data:
     '''
     只記錄primary keys，然後會丟conclusion，用來算class distribution
@@ -95,7 +86,6 @@ class clean_data:
         #處理最後輸出位置
         new_path=result_filepath.replace('.csv','-分析後.csv')
         
-        
         self.deep=len(self.primary_keys)-1 #Deep
         self.simplicity=self.support/self.deep #Simplicity
         
@@ -120,21 +110,21 @@ class clean_data:
             self.result[k]=v
         
         # 全部加到 result dict李
-
         self.result["Deep"]=self.deep
         self.result["Support"]=self.support
         self.result["Reliability"]=self.reliability
         self.result["Class Distribution"]=self.class_distribution
         self.result["Simplicity"]=self.simplicity
-        
+        self.result["RID"] = len(pd.read_csv(new_path)) + 1
         for key in self.result.keys():
             if key == '結論':
                 self.policy['Class'] = self.result[key]
             else:
                 self.policy[key] = self.result[key]
-                
-                
+        
         self.policy.to_csv(new_path, mode = 'a', header = False, index = False) #輸出用append的方式家道csv
+
+        
             
         
         

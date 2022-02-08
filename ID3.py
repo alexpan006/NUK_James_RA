@@ -17,7 +17,7 @@ unclean_subsets裡面拿raw_data class 的東東.
 3.阿你要用的部分就是:   
     (1)RID處理一下
     (2)中繼資料.csv看可不可以用掉
-    (3)等建新說每個分離前的gainA要以啥樣子的csv匯出,你再用個ㄅㄟ
+    (3)等建興說每個分離前的gainA要以啥樣子的csv匯出,你再用個ㄅㄟ
 
 '''
 
@@ -64,9 +64,9 @@ class clean_data:
         self.conclusions=conclusions
         self.support=support #Support
         
-        
         for col in pd.read_csv('中繼資料.csv').columns: 
             self.policy[col] = [""]
+    
     #Reset所有參數
     def reset_all(self):
         self.original_header=list()
@@ -125,18 +125,10 @@ class clean_data:
         self.policy.to_csv(new_path, mode = 'a', header = False, index = False) #輸出用append的方式家道csv
 
         
-            
-        
-        
-        
     def export_result(self,result_filepath):
         #處理最後輸出位置
         new_path = result_filepath.replace('.csv','-分析後.csv')
         self.cal_all(result_filepath)
-            
-        
-        
-
 
 class raw_data:
     class_info = 0.0  #類別訊息獲取量
@@ -291,6 +283,7 @@ class raw_data:
         self.class_info=self.cal_i(list(self.conclusions.values())) #算類別訊息輛
         for col in self.raw_source.columns[:-1]:
             self.attributes[col]=effect_attribute(name=col,conclusion=list(self.conclusions.keys()),gainA=self.class_info,dataframe=self.raw_source[[col,self.raw_source.columns[-1]]])
+        
     def cal_i(self,x):
         '''
         用來算 I( X , Y )
@@ -337,7 +330,7 @@ class effect_attribute:
     "雨天" : [0,2]}
 
     '''
-    def __init__(self, name, conclusion, gainA,dataframe):
+    def __init__(self, name, conclusion, gainA, dataframe):
         
         self.attr_subset.clear() #0207
         
@@ -349,6 +342,7 @@ class effect_attribute:
         self.parent_gainA = gainA
         self.con_num = len(conclusion)
         self.attr_data=dataframe
+
         self.caculate_attr()
     
     def reset_all(self):
@@ -400,9 +394,15 @@ class effect_attribute:
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
         self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
+        # 還沒找到頭應該放哪@_@ >>> 睏惹明天找
+        # attr_gaiaA.gainA_list.append([['結論'],[''],['GainA']])
+        # attr_gaiaA.gainA_list.append([['屬性'],[''],[self.parent_gainA]])
+        attr_gaiaA.gainA_list.append([[self.effect_attr_name],[self.attr_info],[self.gainA]])
         
-        
-        
+class attr_gaiaA():
+    gainA_list = list()
+    def __init__(self):
+        pass
 
 def main():
     panMain()
@@ -412,7 +412,7 @@ def main():
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
     test.export_result("./觀測天氣之資料表---測試匯出.csv")
-        
+    
     pass
 
 # def cccMain():
@@ -432,6 +432,7 @@ def panMain():
 
 if __name__ == "__main__":
     main()
+
 
 
 #檢查CSV是否符合規則

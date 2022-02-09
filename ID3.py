@@ -192,6 +192,7 @@ class raw_data:
         
     #遞迴的部分
     def export_result(self,result_filepath):
+        print('乾淨節點數:',len(self.clean_subsets),"不乾淨節點數:",len(self.unclean_subsets))
         for unclean_subset in self.unclean_subsets:
             unclean_subset.export_result(result_filepath)
         for clean_subset in self.clean_subsets:
@@ -252,6 +253,14 @@ class raw_data:
                 temp_primary_k_unclean[unclean.columns[0]]=(unclean[unclean.columns[0]][0])
                 self.unclean_subsets.append(raw_data(file_path=None,dataframe=(unclean.drop(columns=unclean.columns[0])),primary_keys=temp_primary_k_unclean))
             
+    
+    def get_all_gainA(self):
+        for unclean_subset in self.unclean_subsets:
+            print('-----------')
+            print('本節點之gainA:',unclean_subset.class_info)
+            for attr in unclean_subset.attributes.values():
+                print(attr.effect_attr_name,attr.gainA)
+    
     
     #排序gainA
     def sort_attri_order(self):
@@ -422,6 +431,7 @@ def main():
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
     test.export_result("./觀測天氣之資料表---測試匯出.csv")
+    test.get_all_gainA()
         
     pass
 

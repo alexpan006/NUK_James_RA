@@ -1,4 +1,4 @@
-#coding=utf-8
+# -*- coding: utf-8 -*-
 from email import policy
 from operator import index
 import re
@@ -7,6 +7,12 @@ import pandas as pd
 import math
 from random import random
 
+'''
+0209 -- CCC 各種暴力解orz
+>RID解決完了
+>中繼資料要去掉要能讀到-分析後.csv那個file_path line73-75那邊
+>subset輸出解決了，但是出來之後有中括號跟引號，我暫時去不掉，寫在analyze-qui-stage2.py line42-47
+'''
 
 '''
 2022.02.07--Pan 開工大吉
@@ -17,7 +23,7 @@ unclean_subsets裡面拿raw_data class 的東東.
 3.阿你要用的部分就是:   
     (1)RID處理一下
     (2)中繼資料.csv看可不可以用掉
-    (3)等建新說每個分離前的gainA要以啥樣子的csv匯出,你再用個ㄅㄟ
+    (3)等建興說每個分離前的gainA要以啥樣子的csv匯出,你再用個ㄅㄟ
 
 '''
 
@@ -36,15 +42,6 @@ Noted:
 -->阿png那個有分類的過程,attribute排序的部分我都是預設的,紅線部分是分出來clean,藍線分出來是unclean
 -->阿你可以直接run,看個結果
 '''
-
-'''
-0124 TODO before 0130
->>修改read_in_csv()>>傳入值可能是filePath/dataFrame>>要做不同的事 //// DONE >> 我把它改叫load_data()ㄌ，阿但是我不確定他會不會出事
->>clean_data產出policy>>policy包含effect, deep, simplicity, reliability, support, class distribution
->>修改結論>>最後一行必為結論>>結論可能不止2種 ///// DONE >> 我覺得啦，感覺沒啥毛病但我沒有第3種結論可以試，就是邏輯上應該沒事沒事
->>建立effect_attributes即計算gainA ///// DONE
-'''
-
 
 class clean_data:
     '''
@@ -73,9 +70,12 @@ class clean_data:
         self.conclusions=conclusions
         self.support=support #Support
         
-        
-        for col in pd.read_csv('中繼資料.csv').columns: 
+        '''
+        要去掉中繼資料ㄉ話這裡可以讀到-分析後.csv那個file_path就行ㄌ，直接弄掉就好
+        '''    
+        for col in pd.read_csv('中繼資料.csv',encoding='utf-8').columns: 
             self.policy[col] = [""]
+    
     #Reset所有參數
     def reset_all(self):
         self.original_header=list()
@@ -94,7 +94,6 @@ class clean_data:
     def cal_all(self,result_filepath):
         #處理最後輸出位置
         new_path=result_filepath.replace('.csv','-分析後.csv')
-        
         
         self.deep=len(self.primary_keys)-1 #Deep
         self.simplicity=self.support/self.deep #Simplicity
@@ -120,33 +119,25 @@ class clean_data:
             self.result[k]=v
         
         # 全部加到 result dict李
-
         self.result["Deep"]=self.deep
         self.result["Support"]=self.support
         self.result["Reliability"]=self.reliability
         self.result["Class Distribution"]=self.class_distribution
         self.result["Simplicity"]=self.simplicity
-        
+        self.result["RID"] = len(pd.read_csv(new_path,encoding='utf-8')) + 1
         for key in self.result.keys():
             if key == '結論':
                 self.policy['Class'] = self.result[key]
             else:
                 self.policy[key] = self.result[key]
-                
-                
-        self.policy.to_csv(new_path, mode = 'a', header = False, index = False) #輸出用append的方式家道csv
-            
         
-        
+        self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8') #輸出用append的方式家道csv
+
         
     def export_result(self,result_filepath):
         #處理最後輸出位置
         new_path = result_filepath.replace('.csv','-分析後.csv')
         self.cal_all(result_filepath)
-            
-        
-        
-
 
 class raw_data:
     class_info = 0.0  #類別訊息獲取量
@@ -177,6 +168,8 @@ class raw_data:
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
         self.extract_to_subsets()  #分離clean與unclean資料
+        self.get_all_gainA()
+        
     #Reset所有參數
     def reset_all(self):
         self.class_info = 0.0  #類別訊息獲取量
@@ -252,16 +245,7 @@ class raw_data:
                 temp_primary_k_unclean=dict(self.primary_keys)  #處理primary key
                 temp_primary_k_unclean[unclean.columns[0]]=(unclean[unclean.columns[0]][0])
                 self.unclean_subsets.append(raw_data(file_path=None,dataframe=(unclean.drop(columns=unclean.columns[0])),primary_keys=temp_primary_k_unclean))
-            
-    
-    def get_all_gainA(self):
-        for unclean_subset in self.unclean_subsets:
-            print('-----------')
-            print('本節點之gainA:',unclean_subset.class_info)
-            for attr in unclean_subset.attributes.values():
-                print(attr.effect_attr_name,attr.gainA)
-    
-    
+        
     #排序gainA
     def sort_attri_order(self):
         self.attributes=dict(sorted(self.attributes.items(), key=lambda item: item[1].gainA,reverse=True)) #照gainA升冪排序
@@ -277,7 +261,7 @@ class raw_data:
         if file_path == None: #不用讀csv
             self.raw_source = data
         else:
-            self.raw_source = pd.read_csv(file_path) #讀檔
+            self.raw_source = pd.read_csv(file_path,encoding='utf-8') #讀檔
             policy = pd.DataFrame()
             # 設定clean_data的data
             # clean_data.data = self.raw_source
@@ -293,8 +277,8 @@ class raw_data:
             policy['Simplicity'] = []
             
             output_filename = file_path.replace('.csv','-分析後.csv')
-            policy.to_csv(output_filename, index = False)
-            policy.to_csv('中繼資料.csv', index = False)
+            policy.to_csv(output_filename, index = False,encoding='utf-8')
+            policy.to_csv('中繼資料.csv', index = False,encoding='utf-8')
 
         self.original_header=self.raw_source.columns
         self.s_col = self.raw_source.columns[-1] #直接這樣就好惹  記錄結論的欄位名
@@ -310,6 +294,7 @@ class raw_data:
         self.class_info=self.cal_i(list(self.conclusions.values())) #算類別訊息輛
         for col in self.raw_source.columns[:-1]:
             self.attributes[col]=effect_attribute(name=col,conclusion=list(self.conclusions.keys()),gainA=self.class_info,dataframe=self.raw_source[[col,self.raw_source.columns[-1]]])
+        
     def cal_i(self,x):
         '''
         用來算 I( X , Y )
@@ -325,7 +310,15 @@ class raw_data:
             temp=(-one/total_count)*math.log2((one/total_count))
             sum+=temp
         return sum
-
+    def get_all_gainA(self):
+        for unclean_subset in self.unclean_subsets:
+            attr_gaiaA.gainA_list.append([['屬性'],[''],['GainA']])
+            attr_gaiaA.gainA_list.append([['結論'],[unclean_subset.class_info],['']])
+            # print('-----------')
+            # print('本節點之gainA:',unclean_subset.class_info)
+            for attr in unclean_subset.attributes.values():
+                attr_gaiaA.gainA_list.append([[attr.effect_attr_name],[attr.attr_info],[attr.gainA]])
+                # print(attr.effect_attr_name,attr.gainA)
     
 class effect_attribute:
     con_num = 0 #存結論數量
@@ -356,7 +349,7 @@ class effect_attribute:
     "雨天" : [0,2]}
 
     '''
-    def __init__(self, name, conclusion, gainA,dataframe):
+    def __init__(self, name, conclusion, gainA, dataframe):
         
         self.attr_subset.clear() #0207
         
@@ -368,6 +361,7 @@ class effect_attribute:
         self.parent_gainA = gainA
         self.con_num = len(conclusion)
         self.attr_data=dataframe
+
         self.caculate_attr()
     
     def reset_all(self):
@@ -379,7 +373,6 @@ class effect_attribute:
         self.effect_attr_name = ""    #屬性名稱
         self.attr_data=pd.DataFrame() 
         self.gainA=0.0
-    
     
         
     def cal_i(self,x):
@@ -420,8 +413,8 @@ class effect_attribute:
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
         self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
         
-        
-        
+class attr_gaiaA():
+    gainA_list = list()
 
 def main():
     panMain()
@@ -431,8 +424,7 @@ def main():
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
     test.export_result("./觀測天氣之資料表---測試匯出.csv")
-    test.get_all_gainA()
-        
+    
     pass
 
 # def cccMain():
@@ -452,6 +444,7 @@ def panMain():
 
 if __name__ == "__main__":
     main()
+
 
 
 #檢查CSV是否符合規則

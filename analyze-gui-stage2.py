@@ -1,13 +1,14 @@
-#encoding=utf8
+# -*- coding: utf-8 -*-
 from os import error, stat
 from time import sleep, time
 import tkinter as tk
 from tkinter.constants import BOTTOM
 from tkinter.filedialog import askopenfilename, test
 from tkinter import ttk 
-from ID3 import csvValidCheck
+from ID3 import attr_gaiaA, csvValidCheck
 from ID3 import clean_data
 from ID3 import raw_data
+import csv
 
 class analyzeGui:
     filename=""
@@ -37,13 +38,22 @@ class analyzeGui:
                 
                 source=raw_data(file_path=self.filename)
                 result=source.export_result(self.filename)
+                '''
+                又暴力解惹，阿引號我暫時去不掉@_@
+                '''
+                print(attr_gaiaA.gainA_list)
+                with open(result,'a',newline='',encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerows(attr_gaiaA.gainA_list)
+                '''
+                寫這 在call個函數ㄅ
+                '''    
                 self.writeToMiniConsole('分析完成,輸出結果位於-->'+result+'\n')
             except Exception as err:
                 self.writeToMiniConsole('發生預期外的錯誤2\n')
                 self.writeToMiniConsole(err)
         else:
             self.writeToMiniConsole('原始csv不符合格式:\n'+result)
-        self.writeToMiniConsole('請重新開啟本程式,否則將出現錯誤\n')
     def onChange(self,event):
         self.rule.set(event.widget.get("end-1c linestart", "end-1c"))   
     def on_closing(self): 

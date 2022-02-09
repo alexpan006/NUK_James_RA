@@ -5,9 +5,10 @@ import tkinter as tk
 from tkinter.constants import BOTTOM
 from tkinter.filedialog import askopenfilename, test
 from tkinter import ttk 
-from ID3 import csvValidCheck
+from ID3 import attr_gaiaA, csvValidCheck
 from ID3 import clean_data
 from ID3 import raw_data
+import csv
 
 class analyzeGui:
     filename=""
@@ -37,6 +38,13 @@ class analyzeGui:
                 
                 source=raw_data(file_path=self.filename)
                 result=source.export_result(self.filename)
+                '''
+                又暴力解惹，阿引號我暫時去不掉@_@
+                '''
+                print(attr_gaiaA.gainA_list)
+                with open(result,'a',newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerows(attr_gaiaA.gainA_list)
                 self.writeToMiniConsole('分析完成,輸出結果位於-->'+result+'\n')
             except Exception as err:
                 self.writeToMiniConsole('發生預期外的錯誤2\n')

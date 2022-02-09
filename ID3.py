@@ -7,6 +7,12 @@ import pandas as pd
 import math
 from random import random
 
+'''
+0209 -- CCC 各種暴力解orz
+>RID解決完了
+>中繼資料要去掉要能讀到-分析後.csv那個file_path line73-75那邊
+>subset輸出解決了，但是出來之後有中括號跟引號，我暫時去不掉，寫在analyze-qui-stage2.py line42-47
+'''
 
 '''
 2022.02.07--Pan 開工大吉
@@ -64,6 +70,9 @@ class clean_data:
         self.conclusions=conclusions
         self.support=support #Support
         
+        '''
+        要去掉中繼資料ㄉ話這裡可以讀到-分析後.csv那個file_path就行ㄌ，直接弄掉就好
+        '''    
         for col in pd.read_csv('中繼資料.csv').columns: 
             self.policy[col] = [""]
     
@@ -159,6 +168,8 @@ class raw_data:
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
         self.extract_to_subsets()  #分離clean與unclean資料
+        self.get_all_gainA()
+        
     #Reset所有參數
     def reset_all(self):
         self.class_info = 0.0  #類別訊息獲取量
@@ -233,8 +244,7 @@ class raw_data:
                 temp_primary_k_unclean=dict(self.primary_keys)  #處理primary key
                 temp_primary_k_unclean[unclean.columns[0]]=(unclean[unclean.columns[0]][0])
                 self.unclean_subsets.append(raw_data(file_path=None,dataframe=(unclean.drop(columns=unclean.columns[0])),primary_keys=temp_primary_k_unclean))
-            
-    
+        
     #排序gainA
     def sort_attri_order(self):
         self.attributes=dict(sorted(self.attributes.items(), key=lambda item: item[1].gainA,reverse=True)) #照gainA升冪排序
@@ -299,7 +309,15 @@ class raw_data:
             temp=(-one/total_count)*math.log2((one/total_count))
             sum+=temp
         return sum
-
+    def get_all_gainA(self):
+        for unclean_subset in self.unclean_subsets:
+            attr_gaiaA.gainA_list.append([['屬性'],[''],['GainA']])
+            attr_gaiaA.gainA_list.append([['結論'],[unclean_subset.class_info],['']])
+            # print('-----------')
+            # print('本節點之gainA:',unclean_subset.class_info)
+            for attr in unclean_subset.attributes.values():
+                attr_gaiaA.gainA_list.append([[attr.effect_attr_name],[attr.attr_info],[attr.gainA]])
+                # print(attr.effect_attr_name,attr.gainA)
     
 class effect_attribute:
     con_num = 0 #存結論數量
@@ -355,7 +373,6 @@ class effect_attribute:
         self.attr_data=pd.DataFrame() 
         self.gainA=0.0
     
-    
         
     def cal_i(self,x):
         '''
@@ -394,15 +411,9 @@ class effect_attribute:
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
         self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
-        # 還沒找到頭應該放哪@_@ >>> 睏惹明天找
-        # attr_gaiaA.gainA_list.append([['結論'],[''],['GainA']])
-        # attr_gaiaA.gainA_list.append([['屬性'],[''],[self.parent_gainA]])
-        attr_gaiaA.gainA_list.append([[self.effect_attr_name],[self.attr_info],[self.gainA]])
         
 class attr_gaiaA():
     gainA_list = list()
-    def __init__(self):
-        pass
 
 def main():
     panMain()

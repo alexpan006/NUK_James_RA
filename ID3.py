@@ -42,6 +42,10 @@ Noted:
 -->阿png那個有分類的過程,attribute排序的部分我都是預設的,紅線部分是分出來clean,藍線分出來是unclean
 -->阿你可以直接run,看個結果
 '''
+class attr_gaiaA():
+    gainA_list = pd.DataFrame()
+    def __init__(self):
+        self.gainA_list = pd.DataFrame()
 
 class clean_data:
     '''
@@ -154,6 +158,7 @@ class raw_data:
     clean_subsets=[] #其他的clean subset 裡面存 clean_data class
     unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
     
+    export_gainA = attr_gaiaA()
     #建構子
     def __init__(self,file_path=None,dataframe=None,primary_keys=None):
         '''
@@ -168,7 +173,6 @@ class raw_data:
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
         self.extract_to_subsets()  #分離clean與unclean資料
-        self.get_all_gainA()
         
     #Reset所有參數
     def reset_all(self):
@@ -182,6 +186,7 @@ class raw_data:
         self.primary_keys=dict() #唯一分辨的key
         self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
         self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
+        self.export_gainA = attr_gaiaA()
         
     #遞迴的部分
     def export_result(self,result_filepath):
@@ -191,6 +196,11 @@ class raw_data:
         for clean_subset in self.clean_subsets:
             clean_subset.export_result(result_filepath)
         result_filepath=result_filepath.replace('.csv','-分析後.csv')
+        
+        self.get_all_gainA(export_gainA = self.export_gainA)
+        print('--------------------------')
+        print(self.export_gainA.gainA_list)
+        print('--------------------------')
         return result_filepath
     
     #分離unclean跟clean資料
@@ -310,15 +320,28 @@ class raw_data:
             temp=(-one/total_count)*math.log2((one/total_count))
             sum+=temp
         return sum
-    def get_all_gainA(self):
+    def get_all_gainA(self, export_gainA):
+        export_gainA.gainA_list['subset'] = []
+        export_gainA.gainA_list['attributes'] = []
+        export_gainA.gainA_list[''] = []
+        export_gainA.gainA_list['GainA'] = []
+        lines = 0
         for unclean_subset in self.unclean_subsets:
-            attr_gaiaA.gainA_list.append([['屬性'],[''],['GainA']])
-            attr_gaiaA.gainA_list.append([['結論'],[unclean_subset.class_info],['']])
-            # print('-----------')
-            # print('本節點之gainA:',unclean_subset.class_info)
+            '''
+            抓到ㄉprimary key是屬性名稱，不是屬性種類ㄟ
+            啊下面這邊是把subset結果存成dataframe，subset那欄還要再改<有兩個以上屬性決定的時候怎麼輸出
+            我是想讓他都在subset那欄顯示就好惹
+            除了subset那欄以外沒啥問題惹，最後就直接把這個dataframe用pandas寫進csv就好惹
+            '''
+            for key in unclean_subset.primary_keys:
+                export_gainA.gainA_list.loc[lines] = [key,'','','']
+                lines+=1
+            export_gainA.gainA_list.loc[lines] = ['','結論',unclean_subset.class_info,'']
+            lines+=1
             for attr in unclean_subset.attributes.values():
-                attr_gaiaA.gainA_list.append([[attr.effect_attr_name],[attr.attr_info],[attr.gainA]])
-                # print(attr.effect_attr_name,attr.gainA)
+                export_gainA.gainA_list.loc[lines] = ['',attr.effect_attr_name,attr.attr_info,attr.gainA]
+                lines+=1
+                
     
 class effect_attribute:
     con_num = 0 #存結論數量
@@ -411,10 +434,7 @@ class effect_attribute:
         #算gain A
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
-        self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
-        
-class attr_gaiaA():
-    gainA_list = list()
+        self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA    
 
 def main():
     panMain()

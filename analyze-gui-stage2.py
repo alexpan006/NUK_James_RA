@@ -9,6 +9,7 @@ from ID3 import attr_gaiaA, csvValidCheck
 from ID3 import clean_data
 from ID3 import raw_data
 import csv
+import pandas as pd
 
 class analyzeGui:
     filename=""

@@ -27,8 +27,6 @@ unclean_subsets裡面拿raw_data class 的東東.
 
 '''
 
-
-
 '''
 2022.01.25--Pan
 1.read_in_csv那個函數要用self去拿class級別的variable,這樣才其他地方才吃的到
@@ -44,8 +42,11 @@ Noted:
 '''
 class attr_gaiaA():
     gainA_list = pd.DataFrame()
-    def __init__(self):
-        self.gainA_list = pd.DataFrame()
+
+    def export(self, file_path):
+        self.gainA_list.to_csv(file_path, mode = 'a',encoding='utf-8')
+        self.gainA_list = pd.DataFrame() #reset
+
 
 class clean_data:
     '''
@@ -186,7 +187,6 @@ class raw_data:
         self.primary_keys=dict() #唯一分辨的key
         self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
         self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
-        self.export_gainA = attr_gaiaA()
         
     #遞迴的部分
     def export_result(self,result_filepath):
@@ -201,6 +201,8 @@ class raw_data:
         print('--------------------------')
         print(self.export_gainA.gainA_list)
         print('--------------------------')
+        export_gainA_path = result_filepath.replace('-分析後.csv','-分析過程子集.csv')
+        self.export_gainA.export(file_path = export_gainA_path)
         return result_filepath
     
     #分離unclean跟clean資料
@@ -325,22 +327,12 @@ class raw_data:
         export_gainA.gainA_list['attributes'] = []
         export_gainA.gainA_list[''] = []
         export_gainA.gainA_list['GainA'] = []
-        lines = 0
         for unclean_subset in self.unclean_subsets:
-            '''
-            抓到ㄉprimary key是屬性名稱，不是屬性種類ㄟ
-            啊下面這邊是把subset結果存成dataframe，subset那欄還要再改<有兩個以上屬性決定的時候怎麼輸出
-            我是想讓他都在subset那欄顯示就好惹
-            除了subset那欄以外沒啥問題惹，最後就直接把這個dataframe用pandas寫進csv就好惹
-            '''
-            for key in unclean_subset.primary_keys:
-                export_gainA.gainA_list.loc[lines] = [key,'','','']
-                lines+=1
-            export_gainA.gainA_list.loc[lines] = ['','結論',unclean_subset.class_info,'']
-            lines+=1
+            
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':unclean_subset.primary_keys}, ignore_index = True)
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':unclean_subset.class_info}, ignore_index = True)
             for attr in unclean_subset.attributes.values():
-                export_gainA.gainA_list.loc[lines] = ['',attr.effect_attr_name,attr.attr_info,attr.gainA]
-                lines+=1
+                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
                 
     
 class effect_attribute:

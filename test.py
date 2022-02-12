@@ -19,6 +19,7 @@ import math
 
 
 
+import json
 def cal_i(a):
     print('在a李:',a)
     total_count=0
@@ -31,8 +32,7 @@ def cal_i(a):
             print('temp=',temp)
             sum+=temp
     return sum
-parent=0.9709505944546686
-child=(2/5)*cal_i([0,2]) + (3/5)*cal_i([3,0]) 
-print('child:',child)
-print(parent - child  )
 
+ha={"1":1,"2":2}
+
+print(type(json.dumps(ha)))

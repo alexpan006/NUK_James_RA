@@ -38,10 +38,12 @@ class analyzeGui:
             try:
                 source=raw_data(file_path=self.filename)
                 result=source.export_result(self.filename)
+                all_subsets=source.get_all_gainA_test(result_filepath=self.filename)
                 '''
                 寫這 在call個函數ㄅ
                 '''    
                 self.writeToMiniConsole('分析完成,輸出結果位於-->'+result+'\n')
+                self.writeToMiniConsole('分析完成,分析過程子集合位於-->'+all_subsets+'\n')
             except Exception as err:
                 self.writeToMiniConsole('發生預期外的錯誤2\n')
                 self.writeToMiniConsole(err)

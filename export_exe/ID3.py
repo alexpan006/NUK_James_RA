@@ -1,11 +1,9 @@
-#coding=utf-8
-from email import policy
-from operator import index
+# -*- coding: utf-8 -*-
 import re
-from isort import file
 import pandas as pd
 import math
-from random import random
+import json
+import csv
 
 '''
 0209 -- CCC 各種暴力解orz
@@ -27,8 +25,6 @@ unclean_subsets裡面拿raw_data class 的東東.
 
 '''
 
-
-
 '''
 2022.01.25--Pan
 1.read_in_csv那個函數要用self去拿class級別的variable,這樣才其他地方才吃的到
@@ -42,6 +38,22 @@ Noted:
 -->阿png那個有分類的過程,attribute排序的部分我都是預設的,紅線部分是分出來clean,藍線分出來是unclean
 -->阿你可以直接run,看個結果
 '''
+class attr_gaiaA():
+    gainA_list = pd.DataFrame()
+    file_path = ''
+
+    def export(self, file_path):
+        print(self.gainA_list)
+        # 判斷是否第一次讀寫
+        if self.file_path != file_path:
+            self.file_path = file_path
+            self.gainA_list.to_csv(file_path, index = False, encoding='utf-8')
+            self.gainA_list = pd.DataFrame() #reset
+        #如果該子集是空的不寫<<不知道為啥有空的
+        elif not self.gainA_list.empty:
+            self.gainA_list.to_csv(file_path, mode = 'a', index = False, header= False, encoding='utf-8')
+            self.gainA_list = pd.DataFrame() #reset
+
 
 class clean_data:
     '''
@@ -140,7 +152,6 @@ class clean_data:
         self.cal_all(result_filepath)
 
 class raw_data:
-    class_info = 0.0  #類別訊息獲取量
     conclusions = {} #結論 ex: {好:2,不好:5}
     conclusion_col = ""
     raw_source=pd.DataFrame()
@@ -154,6 +165,7 @@ class raw_data:
     clean_subsets=[] #其他的clean subset 裡面存 clean_data class
     unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
     
+    export_gainA = attr_gaiaA()
     #建構子
     def __init__(self,file_path=None,dataframe=None,primary_keys=None):
         '''
@@ -168,11 +180,9 @@ class raw_data:
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
         self.extract_to_subsets()  #分離clean與unclean資料
-        self.get_all_gainA()
         
     #Reset所有參數
     def reset_all(self):
-        self.class_info = 0.0  #類別訊息獲取量
         self.conclusions = {} #結論 ex: {好:2,不好:5}
         self.conclusion_col = ""
         self.raw_source=pd.DataFrame()
@@ -182,17 +192,42 @@ class raw_data:
         self.primary_keys=dict() #唯一分辨的key
         self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
         self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
-        
+        self.export_gainA.file_path = ''
     #遞迴的部分
     def export_result(self,result_filepath):
-        print('乾淨節點數:',len(self.clean_subsets),"不乾淨節點數:",len(self.unclean_subsets))
+        # print('乾淨節點數:',len(self.clean_subsets),"不乾淨節點數:",len(self.unclean_subsets))
         for unclean_subset in self.unclean_subsets:
             unclean_subset.export_result(result_filepath)
         for clean_subset in self.clean_subsets:
             clean_subset.export_result(result_filepath)
         result_filepath=result_filepath.replace('.csv','-分析後.csv')
+        # self.get_all_gainA(export_gainA = self.export_gainA)
+        # export_gainA_path = result_filepath.replace('-分析後.csv','-分析過程子集.csv')
+        # self.export_gainA.export(file_path = export_gainA_path)
         return result_filepath
     
+    def get_all_gainA_test(self,result_filepath):
+        result_filepath=result_filepath.replace('.csv','-分析過程子集.csv')
+        words_to_write=list()
+        for unclean_subset in self.unclean_subsets:
+            words_to_write.append(['Title==>',json.dumps(unclean_subset.primary_keys,ensure_ascii=False).encode('utf8').decode()])
+            words_to_write.append(['屬性','','Gain(A)'])
+            words_to_write.append(['結論',str(unclean_subset.class_info),''])
+            for attr in unclean_subset.attributes.values():
+                words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+                
+        words_to_write.append(['Title==>',json.dumps(self.primary_keys,ensure_ascii=False).encode('utf8').decode()])
+        words_to_write.append(['屬性','','Gain(A)'])
+        words_to_write.append(['結論',str(self.class_info),''])
+        for attr in self.attributes.values():
+            words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+            
+        # print(words_to_write)
+        with open(result_filepath,'w',encoding='utf8',newline='') as f:
+            writer=csv.writer(f)
+            writer.writerows(words_to_write)
+        return result_filepath
+        
     #分離unclean跟clean資料
     def extract_to_subsets(self):
         '''
@@ -310,15 +345,24 @@ class raw_data:
             temp=(-one/total_count)*math.log2((one/total_count))
             sum+=temp
         return sum
-    def get_all_gainA(self):
+    def get_all_gainA(self, export_gainA):
+        export_gainA.gainA_list['subset'] = []
+        export_gainA.gainA_list['attributes'] = []
+        export_gainA.gainA_list[''] = []
+        export_gainA.gainA_list['GainA'] = []
+
+        if export_gainA.file_path == '':
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':'None'}, ignore_index = True)
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':self.class_info}, ignore_index = True)
+            for attr in self.attributes.values():
+                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
+
         for unclean_subset in self.unclean_subsets:
-            attr_gaiaA.gainA_list.append([['屬性'],[''],['GainA']])
-            attr_gaiaA.gainA_list.append([['結論'],[unclean_subset.class_info],['']])
-            # print('-----------')
-            # print('本節點之gainA:',unclean_subset.class_info)
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':unclean_subset.primary_keys}, ignore_index = True)
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':unclean_subset.class_info}, ignore_index = True)
             for attr in unclean_subset.attributes.values():
-                attr_gaiaA.gainA_list.append([[attr.effect_attr_name],[attr.attr_info],[attr.gainA]])
-                # print(attr.effect_attr_name,attr.gainA)
+                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
+                
     
 class effect_attribute:
     con_num = 0 #存結論數量
@@ -411,10 +455,7 @@ class effect_attribute:
         #算gain A
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
-        self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
-        
-class attr_gaiaA():
-    gainA_list = list()
+        self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA    
 
 def main():
     panMain()
@@ -424,6 +465,7 @@ def main():
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
     test.export_result("./觀測天氣之資料表---測試匯出.csv")
+    # test.get_all_gainA_test()
     
     pass
 

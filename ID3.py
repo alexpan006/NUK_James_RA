@@ -140,7 +140,6 @@ class clean_data:
         self.cal_all(result_filepath)
 
 class raw_data:
-    class_info = 0.0  #類別訊息獲取量
     conclusions = {} #結論 ex: {好:2,不好:5}
     conclusion_col = ""
     raw_source=pd.DataFrame()
@@ -172,7 +171,6 @@ class raw_data:
         
     #Reset所有參數
     def reset_all(self):
-        self.class_info = 0.0  #類別訊息獲取量
         self.conclusions = {} #結論 ex: {好:2,不好:5}
         self.conclusion_col = ""
         self.raw_source=pd.DataFrame()
@@ -182,6 +180,19 @@ class raw_data:
         self.primary_keys=dict() #唯一分辨的key
         self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
         self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
+    
+    def get_all_gainA_test(self):
+        for unclean_subset in self.unclean_subsets:
+            print('-----------------')
+            print('Class gainA:',unclean_subset.class_info)
+            print('表頭:',unclean_subset.primary_keys)
+            for attr in unclean_subset.attributes.values():
+                print(attr.effect_attr_name,':',attr.gainA)
+        print('-----------')
+        print('Class gainA:',self.class_info)
+        print('表頭:',self.primary_keys)
+        for attrr in self.attributes.values():
+            print(attrr.effect_attr_name,':',attrr.gainA)
         
     #遞迴的部分
     def export_result(self,result_filepath):
@@ -292,6 +303,7 @@ class raw_data:
         data_sum=counter #資料總數
         # print(list(self.conclusions.values()))
         self.class_info=self.cal_i(list(self.conclusions.values())) #算類別訊息輛
+        print(self.class_info)
         for col in self.raw_source.columns[:-1]:
             self.attributes[col]=effect_attribute(name=col,conclusion=list(self.conclusions.keys()),gainA=self.class_info,dataframe=self.raw_source[[col,self.raw_source.columns[-1]]])
         
@@ -411,7 +423,9 @@ class effect_attribute:
         #算gain A
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
-        self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA
+        self.gainA=(self.parent_gainA-self.attr_info) #結論-自己的屬性訊息量=GainA
+        
+        # print(self.effect_attr_name,"====>",self.parent_gainA-self.attr_info)
         
 class attr_gaiaA():
     gainA_list = list()
@@ -424,6 +438,7 @@ def main():
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
     test.export_result("./觀測天氣之資料表---測試匯出.csv")
+    test.get_all_gainA_test()
     
     pass
 

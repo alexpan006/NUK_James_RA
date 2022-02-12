@@ -20,23 +20,19 @@ import math
 
 
 def cal_i(a):
+    print('在a李:',a)
     total_count=0
     for one in a:
         total_count+=one
     sum=0
     for one in a:
-        if(one==0):
-            continue
-        temp=(-one/total_count)*math.log2((one/total_count))
-        sum+=temp
+        if(one!=0):
+            temp=(-one/total_count)*math.log2((one/total_count))
+            print('temp=',temp)
+            sum+=temp
     return sum
-# print(cal_i([0,4]))
-
-la=["1"]
-ha={"1":12,"2":22,"3":33}
-
-print( x for x in la if x not in ha)
-
-for k in sorted(ha):
-    print(k)
+parent=0.9709505944546686
+child=(2/5)*cal_i([0,2]) + (3/5)*cal_i([3,0]) 
+print('child:',child)
+print(parent - child  )
 

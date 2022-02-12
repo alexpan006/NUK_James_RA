@@ -44,11 +44,14 @@ Noted:
 class attr_gaiaA():
     gainA_list = pd.DataFrame()
     file_path = ''
+
     def export(self, file_path):
+        print(self.gainA_list)
         # 判斷是否第一次讀寫
         if self.file_path != file_path:
             self.file_path = file_path
             self.gainA_list.to_csv(file_path, index = False, encoding='utf-8')
+            self.gainA_list = pd.DataFrame() #reset
         #如果該子集是空的不寫<<不知道為啥有空的
         elif not self.gainA_list.empty:
             self.gainA_list.to_csv(file_path, mode = 'a', index = False, header= False, encoding='utf-8')
@@ -194,7 +197,7 @@ class raw_data:
         self.primary_keys=dict() #唯一分辨的key
         self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
         self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
-        
+        self.export_gainA.file_path = ''
     #遞迴的部分
     def export_result(self,result_filepath):
         print('乾淨節點數:',len(self.clean_subsets),"不乾淨節點數:",len(self.unclean_subsets))
@@ -331,8 +334,14 @@ class raw_data:
         export_gainA.gainA_list['attributes'] = []
         export_gainA.gainA_list[''] = []
         export_gainA.gainA_list['GainA'] = []
+
+        if export_gainA.file_path == '':
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':'None'}, ignore_index = True)
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':self.class_info}, ignore_index = True)
+            for attr in self.attributes.values():
+                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
+
         for unclean_subset in self.unclean_subsets:
-            
             export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':unclean_subset.primary_keys}, ignore_index = True)
             export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':unclean_subset.class_info}, ignore_index = True)
             for attr in unclean_subset.attributes.values():

@@ -36,16 +36,8 @@ class analyzeGui:
             self.writeToMiniConsole('發生預期外的錯誤1\n')
         if(resultToken):
             try:
-                
                 source=raw_data(file_path=self.filename)
                 result=source.export_result(self.filename)
-                '''
-                又暴力解惹，阿引號我暫時去不掉@_@
-                '''
-                print(attr_gaiaA.gainA_list)
-                with open(result,'a',newline='',encoding='utf-8') as file:
-                    writer = csv.writer(file)
-                    writer.writerows(attr_gaiaA.gainA_list)
                 '''
                 寫這 在call個函數ㄅ
                 '''    

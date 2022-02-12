@@ -3,6 +3,7 @@ from email import policy
 from operator import index
 import re
 from isort import file
+from matplotlib.pyplot import title
 import pandas as pd
 import math
 from random import random
@@ -42,10 +43,16 @@ Noted:
 '''
 class attr_gaiaA():
     gainA_list = pd.DataFrame()
-
+    file_path = ''
     def export(self, file_path):
-        self.gainA_list.to_csv(file_path, mode = 'a',encoding='utf-8')
-        self.gainA_list = pd.DataFrame() #reset
+        # 判斷是否第一次讀寫
+        if self.file_path != file_path:
+            self.file_path = file_path
+            self.gainA_list.to_csv(file_path, index = False, encoding='utf-8')
+        #如果該子集是空的不寫<<不知道為啥有空的
+        elif not self.gainA_list.empty:
+            self.gainA_list.to_csv(file_path, mode = 'a', index = False, header= False, encoding='utf-8')
+            self.gainA_list = pd.DataFrame() #reset
 
 
 class clean_data:
@@ -198,9 +205,6 @@ class raw_data:
         result_filepath=result_filepath.replace('.csv','-分析後.csv')
         
         self.get_all_gainA(export_gainA = self.export_gainA)
-        print('--------------------------')
-        print(self.export_gainA.gainA_list)
-        print('--------------------------')
         export_gainA_path = result_filepath.replace('-分析後.csv','-分析過程子集.csv')
         self.export_gainA.export(file_path = export_gainA_path)
         return result_filepath

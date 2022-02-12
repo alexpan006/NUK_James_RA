@@ -3,6 +3,7 @@ from email import policy
 from operator import index
 import re
 from isort import file
+from matplotlib.pyplot import title
 import pandas as pd
 import math
 from random import random
@@ -27,8 +28,6 @@ unclean_subsets裡面拿raw_data class 的東東.
 
 '''
 
-
-
 '''
 2022.01.25--Pan
 1.read_in_csv那個函數要用self去拿class級別的variable,這樣才其他地方才吃的到
@@ -42,6 +41,19 @@ Noted:
 -->阿png那個有分類的過程,attribute排序的部分我都是預設的,紅線部分是分出來clean,藍線分出來是unclean
 -->阿你可以直接run,看個結果
 '''
+class attr_gaiaA():
+    gainA_list = pd.DataFrame()
+    file_path = ''
+    def export(self, file_path):
+        # 判斷是否第一次讀寫
+        if self.file_path != file_path:
+            self.file_path = file_path
+            self.gainA_list.to_csv(file_path, index = False, encoding='utf-8')
+        #如果該子集是空的不寫<<不知道為啥有空的
+        elif not self.gainA_list.empty:
+            self.gainA_list.to_csv(file_path, mode = 'a', index = False, header= False, encoding='utf-8')
+            self.gainA_list = pd.DataFrame() #reset
+
 
 class clean_data:
     '''
@@ -153,6 +165,7 @@ class raw_data:
     clean_subsets=[] #其他的clean subset 裡面存 clean_data class
     unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
     
+    export_gainA = attr_gaiaA()
     #建構子
     def __init__(self,file_path=None,dataframe=None,primary_keys=None):
         '''
@@ -167,7 +180,6 @@ class raw_data:
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
         self.extract_to_subsets()  #分離clean與unclean資料
-        self.get_all_gainA()
         
     #Reset所有參數
     def reset_all(self):
@@ -202,6 +214,10 @@ class raw_data:
         for clean_subset in self.clean_subsets:
             clean_subset.export_result(result_filepath)
         result_filepath=result_filepath.replace('.csv','-分析後.csv')
+        
+        self.get_all_gainA(export_gainA = self.export_gainA)
+        export_gainA_path = result_filepath.replace('-分析後.csv','-分析過程子集.csv')
+        self.export_gainA.export(file_path = export_gainA_path)
         return result_filepath
     
     #分離unclean跟clean資料
@@ -322,15 +338,18 @@ class raw_data:
             temp=(-one/total_count)*math.log2((one/total_count))
             sum+=temp
         return sum
-    def get_all_gainA(self):
+    def get_all_gainA(self, export_gainA):
+        export_gainA.gainA_list['subset'] = []
+        export_gainA.gainA_list['attributes'] = []
+        export_gainA.gainA_list[''] = []
+        export_gainA.gainA_list['GainA'] = []
         for unclean_subset in self.unclean_subsets:
-            attr_gaiaA.gainA_list.append([['屬性'],[''],['GainA']])
-            attr_gaiaA.gainA_list.append([['結論'],[unclean_subset.class_info],['']])
-            # print('-----------')
-            # print('本節點之gainA:',unclean_subset.class_info)
+            
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':unclean_subset.primary_keys}, ignore_index = True)
+            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':unclean_subset.class_info}, ignore_index = True)
             for attr in unclean_subset.attributes.values():
-                attr_gaiaA.gainA_list.append([[attr.effect_attr_name],[attr.attr_info],[attr.gainA]])
-                # print(attr.effect_attr_name,attr.gainA)
+                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
+                
     
 class effect_attribute:
     con_num = 0 #存結論數量
@@ -423,12 +442,7 @@ class effect_attribute:
         #算gain A
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
-        self.gainA=(self.parent_gainA-self.attr_info) #結論-自己的屬性訊息量=GainA
-        
-        # print(self.effect_attr_name,"====>",self.parent_gainA-self.attr_info)
-        
-class attr_gaiaA():
-    gainA_list = list()
+        self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA    
 
 def main():
     panMain()
@@ -438,7 +452,7 @@ def main():
 def panMain():
     test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
     test.export_result("./觀測天氣之資料表---測試匯出.csv")
-    test.get_all_gainA_test()
+    # test.get_all_gainA_test()
     
     pass
 

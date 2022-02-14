@@ -211,16 +211,22 @@ class raw_data:
         words_to_write=list()
         for unclean_subset in self.unclean_subsets:
             words_to_write.append(['Title==>',json.dumps(unclean_subset.primary_keys,ensure_ascii=False).encode('utf8').decode()])
-            words_to_write.append(['屬性','','Gain(A)'])
-            words_to_write.append(['結論',str(unclean_subset.class_info),''])
+            # words_to_write.append(['屬性','','Gain(A)'])
+            words_to_write.append(['屬性','Gain(A)',''])  
+            # words_to_write.append(['結論',str(unclean_subset.class_info),''])
+            words_to_write.append(['結論','',str(unclean_subset.class_info)])
             for attr in unclean_subset.attributes.values():
-                words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+                # words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+                words_to_write.append([attr.effect_attr_name,attr.gainA,attr.attr_info])
                 
         words_to_write.append(['Title==>',json.dumps(self.primary_keys,ensure_ascii=False).encode('utf8').decode()])
-        words_to_write.append(['屬性','','Gain(A)'])
-        words_to_write.append(['結論',str(self.class_info),''])
+        # words_to_write.append(['屬性','','Gain(A)'])
+        words_to_write.append(['屬性','Gain(A)',''])        
+        # words_to_write.append(['結論',str(self.class_info),''])
+        words_to_write.append(['結論','',str(self.class_info)])
         for attr in self.attributes.values():
-            words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+            # words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+            words_to_write.append([attr.effect_attr_name,attr.gainA,attr.attr_info])
             
         # print(words_to_write)
         with open(result_filepath,'w',encoding='utf-8-sig',newline='') as f:
@@ -304,12 +310,12 @@ class raw_data:
             policy['RID'] = []
             for effect in self.raw_source.columns[:-1]:
                 policy[effect] = []
-            policy['Class'] = []
             policy['Deep'] = []
             policy['Support'] = []
             policy['Reliability'] = []
             policy['Class Distribution'] = []
             policy['Simplicity'] = []
+            policy['Class'] = []
             
             output_filename = file_path.replace('.csv','-分析後.csv')
             policy.to_csv(output_filename, index = False,encoding='utf-8')

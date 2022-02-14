@@ -223,7 +223,7 @@ class raw_data:
             words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
             
         # print(words_to_write)
-        with open(result_filepath,'w',encoding='utf8',newline='') as f:
+        with open(result_filepath,'w',encoding='utf-8-sig',newline='') as f:
             writer=csv.writer(f)
             writer.writerows(words_to_write)
         return result_filepath

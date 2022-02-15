@@ -1,4 +1,4 @@
-RID,天氣,氣溫,濕度,風,Deep,Support,Reliability,Class Distribution,Simplicity,Class
+﻿RID,天氣,氣溫,濕度,風,Deep,Support,Reliability,Class Distribution,Simplicity,Class
 1,晴朗,,正常,,2,2,1.0,"0,2",1.0,好
 2,晴朗,,高,,2,3,1.0,"3,0",1.5,不好
 3,雨天,,,有,2,2,1.0,"0,2",1.0,不好

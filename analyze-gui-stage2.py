@@ -42,6 +42,12 @@ class analyzeGui:
                 '''
                 寫這 在call個函數ㄅ
                 '''    
+                # sum
+                data = pd.read_csv(result)
+                # print('Simplicity:',data['Simplicity'].sum())
+                # print('Support:',data['Support'].sum())
+                data = data.append({'RID':'','Support':data['Support'].sum(),'Simplicity':data['Simplicity'].sum()}, ignore_index = True)
+                data.to_csv(result, index = False,encoding='utf-8-sig')
                 self.writeToMiniConsole('分析完成,輸出結果位於-->'+result+'\n')
                 self.writeToMiniConsole('分析完成,分析過程子集合位於-->'+all_subsets+'\n')
             except Exception as err:

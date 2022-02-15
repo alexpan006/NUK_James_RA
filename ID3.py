@@ -310,12 +310,16 @@ class raw_data:
             policy['RID'] = []
             for effect in self.raw_source.columns[:-1]:
                 policy[effect] = []
+            '''
+            我看不懂建興想幹嘛ㄌ class的部分 他是想放最後一個還是原本結論自己跑到最後去ㄚ
+            啊反正就 下面這邊 如果想要class在最後一個 把policy['Class']調到policy['Simplicity']後面就好ㄌ
+            '''
+            policy['Class'] = []
             policy['Deep'] = []
             policy['Support'] = []
             policy['Reliability'] = []
             policy['Class Distribution'] = []
             policy['Simplicity'] = []
-            policy['Class'] = []
             
             output_filename = file_path.replace('.csv','-分析後.csv')
             policy.to_csv(output_filename, index = False,encoding='utf-8-sig')

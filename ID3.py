@@ -127,8 +127,16 @@ class clean_data:
         
         
         self.reliability=self.support/sum(class_d)#Reliability的部分
+        count = 1
         for k,v in self.primary_keys.items():
-            self.result[k]=v
+            if count == len(self.primary_keys):
+                self.result['Class']=v
+            else:
+                self.result[k]=v
+            count+=1
+        # for item in self.primary_keys[:-1]:
+        #     self.result[item] = item
+        # self.result['Class'] = self.primary_keys[-1]
         
         # 全部加到 result dict李
         self.result["Deep"]=self.deep
@@ -138,10 +146,11 @@ class clean_data:
         self.result["Simplicity"]=self.simplicity
         self.result["RID"] = len(pd.read_csv(new_path,encoding='utf-8-sig')) + 1
         for key in self.result.keys():
-            if key == '結論':
-                self.policy['Class'] = self.result[key]
-            else:
-                self.policy[key] = self.result[key]
+            # if key == '結論':
+            #     self.policy['Class'] = self.result[key]
+            # else:
+            #     self.policy[key] = self.result[key]
+            self.policy[key] = self.result[key]
         
         self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
 

@@ -47,7 +47,7 @@ class attr_gaiaA():
         # 判斷是否第一次讀寫
         if self.file_path != file_path:
             self.file_path = file_path
-            self.gainA_list.to_csv(file_path, index = False, encoding='utf-8')
+            self.gainA_list.to_csv(file_path, index = False, encoding='utf-8-sig')
             self.gainA_list = pd.DataFrame() #reset
         #如果該子集是空的不寫<<不知道為啥有空的
         elif not self.gainA_list.empty:
@@ -85,7 +85,7 @@ class clean_data:
         '''
         要去掉中繼資料ㄉ話這裡可以讀到-分析後.csv那個file_path就行ㄌ，直接弄掉就好
         '''    
-        for col in pd.read_csv('中繼資料.csv',encoding='utf-8').columns: 
+        for col in pd.read_csv('中繼資料.csv',encoding='utf-8-sig').columns: 
             self.policy[col] = [""]
     
     #Reset所有參數
@@ -136,14 +136,14 @@ class clean_data:
         self.result["Reliability"]=self.reliability
         self.result["Class Distribution"]=self.class_distribution
         self.result["Simplicity"]=self.simplicity
-        self.result["RID"] = len(pd.read_csv(new_path,encoding='utf-8')) + 1
+        self.result["RID"] = len(pd.read_csv(new_path,encoding='utf-8-sig')) + 1
         for key in self.result.keys():
             if key == '結論':
                 self.policy['Class'] = self.result[key]
             else:
                 self.policy[key] = self.result[key]
         
-        self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8') #輸出用append的方式家道csv
+        self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
 
         
     def export_result(self,result_filepath):
@@ -212,18 +212,24 @@ class raw_data:
         for unclean_subset in self.unclean_subsets:
             words_to_write.append(['Title==>',json.dumps(unclean_subset.primary_keys,ensure_ascii=False).encode('utf8').decode()])
             words_to_write.append(['屬性','','Gain(A)'])
+            # words_to_write.append(['屬性','Gain(A)',''])  
             words_to_write.append(['結論',str(unclean_subset.class_info),''])
+            # words_to_write.append(['結論','',str(unclean_subset.class_info)])
             for attr in unclean_subset.attributes.values():
                 words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+                # words_to_write.append([attr.effect_attr_name,attr.gainA,attr.attr_info])
                 
         words_to_write.append(['Title==>',json.dumps(self.primary_keys,ensure_ascii=False).encode('utf8').decode()])
         words_to_write.append(['屬性','','Gain(A)'])
+        # words_to_write.append(['屬性','Gain(A)',''])        
         words_to_write.append(['結論',str(self.class_info),''])
+        # words_to_write.append(['結論','',str(self.class_info)])
         for attr in self.attributes.values():
             words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+            # words_to_write.append([attr.effect_attr_name,attr.gainA,attr.attr_info])
             
         # print(words_to_write)
-        with open(result_filepath,'w',encoding='utf8',newline='') as f:
+        with open(result_filepath,'w',encoding='utf-8-sig',newline='') as f:
             writer=csv.writer(f)
             writer.writerows(words_to_write)
         return result_filepath
@@ -296,7 +302,7 @@ class raw_data:
         if file_path == None: #不用讀csv
             self.raw_source = data
         else:
-            self.raw_source = pd.read_csv(file_path,encoding='utf-8') #讀檔
+            self.raw_source = pd.read_csv(file_path,encoding='utf-8-sig') #讀檔
             policy = pd.DataFrame()
             # 設定clean_data的data
             # clean_data.data = self.raw_source
@@ -304,6 +310,10 @@ class raw_data:
             policy['RID'] = []
             for effect in self.raw_source.columns[:-1]:
                 policy[effect] = []
+            '''
+            我看不懂建興想幹嘛ㄌ class的部分 他是想放最後一個還是原本結論自己跑到最後去ㄚ
+            啊反正就 下面這邊 如果想要class在最後一個 把policy['Class']調到policy['Simplicity']後面就好ㄌ
+            '''
             policy['Class'] = []
             policy['Deep'] = []
             policy['Support'] = []
@@ -312,8 +322,8 @@ class raw_data:
             policy['Simplicity'] = []
             
             output_filename = file_path.replace('.csv','-分析後.csv')
-            policy.to_csv(output_filename, index = False,encoding='utf-8')
-            policy.to_csv('中繼資料.csv', index = False,encoding='utf-8')
+            policy.to_csv(output_filename, index = False,encoding='utf-8-sig')
+            policy.to_csv('中繼資料.csv', index = False,encoding='utf-8-sig')
 
         self.original_header=self.raw_source.columns
         self.s_col = self.raw_source.columns[-1] #直接這樣就好惹  記錄結論的欄位名

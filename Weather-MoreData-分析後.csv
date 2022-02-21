@@ -1,0 +1,12 @@
+﻿RID,Wind,Temperature,Humidity,Weather,Class,Deep,Support,Reliability,Class Distribution,Simplicity
+1,No,Hot,,Cloud,Good,3.0,3,1.0,"3,0",1.0
+2,No,Moderate,,Cloud,No,3.0,1,1.0,"0,1",0.3333333333333333
+3,No,,High,Sunny,No,3.0,2,1.0,"0,2",0.6666666666666666
+4,No,,Normal,Sunny,Good,3.0,2,1.0,"2,0",0.6666666666666666
+5,No,,,Rainy,Good,2.0,4,1.0,"4,0",2.0
+6,Yes,,High,Cloud,Good,3.0,1,1.0,"1,0",0.3333333333333333
+7,Yes,,Normal,Cloud,No,3.0,1,1.0,"0,1",0.3333333333333333
+8,Yes,Hot,,Sunny,No,3.0,1,1.0,"0,1",0.3333333333333333
+9,Yes,Moderate,,Sunny,Good,3.0,1,1.0,"1,0",0.3333333333333333
+10,Yes,,,Rainy,No,2.0,3,1.0,"0,3",1.5
+,,,,,,,19,,,7.499999999999999

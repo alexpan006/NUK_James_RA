@@ -1,0 +1,15 @@
+Weather,AQI,Temperature,Humidity,Wind,Go-on-a-picnic
+Cloud,High,Hot,High,No,Good
+Cloud,Highg,Hot,Normal,No,Good
+Cloud,High,Hot,Normal,No,Good
+Cloud,High,Moderate,High,Yes,Good
+Rainy,Low,Hot,Normal,No,Good
+Rainy,High,Hot,Normal,Yes,No
+Rainy,Low,Moderate,High,No,Good
+Rainy,High,Moderate,High,Yes,No
+Rainy,Low,Moderate,Normal,No,Good
+Sunny,Low,Hot,High,No,No
+Sunny,Low,Hot,High,Yes,No
+Sunny,High,Hot,Normal,No,Good
+Sunny,Low,Moderate,High,No,No
+Sunny,High,Moderate,Normal,Yes,Good

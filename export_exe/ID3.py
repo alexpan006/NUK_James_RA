@@ -111,9 +111,12 @@ class clean_data:
         self.simplicity=self.support/self.deep #Simplicity
         
         #處理class distribution的部分
+        #先sort self.conclusion確保都是['不好', '好']
+        self.conclusions.sort()
         class_d=list()
         for one_conclusion in self.conclusions: #初始化class_d
             class_d.append(0)
+            
         for index,v in self.clean_data.iterrows():
             temp_a=list()
             for one_conclusion in self.conclusions:
@@ -127,9 +130,14 @@ class clean_data:
         
         
         self.reliability=self.support/sum(class_d)#Reliability的部分
+        count = 1
         for k,v in self.primary_keys.items():
-            self.result[k]=v
-        
+            if count == len(self.primary_keys):
+                self.result['Class']=v
+            else:
+                self.result[k]=v
+            count+=1
+            
         # 全部加到 result dict李
         self.result["Deep"]=self.deep
         self.result["Support"]=self.support
@@ -138,10 +146,7 @@ class clean_data:
         self.result["Simplicity"]=self.simplicity
         self.result["RID"] = len(pd.read_csv(new_path,encoding='utf-8-sig')) + 1
         for key in self.result.keys():
-            if key == '結論':
-                self.policy['Class'] = self.result[key]
-            else:
-                self.policy[key] = self.result[key]
+            self.policy[key] = self.result[key]
         
         self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
 
@@ -150,6 +155,7 @@ class clean_data:
         #處理最後輸出位置
         new_path = result_filepath.replace('.csv','-分析後.csv')
         self.cal_all(result_filepath)
+        # print(self.primary_keys,'===>',self.class_distribution)
 
 class raw_data:
     conclusions = {} #結論 ex: {好:2,不好:5}
@@ -473,8 +479,8 @@ def main():
     
 
 def panMain():
-    test=raw_data(file_path='./觀測天氣之資料表.csv')# pan
-    test.export_result("./觀測天氣之資料表---測試匯出.csv")
+    test=raw_data(file_path='./家欄位.csv')# pan
+    test.export_result("./家欄位_測試匯出.csv")
     # test.get_all_gainA_test()
     
     pass

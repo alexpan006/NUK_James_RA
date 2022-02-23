@@ -36,16 +36,17 @@ class analyzeGui:
             self.writeToMiniConsole('發生預期外的錯誤1\n')
         if(resultToken):
             try:
-                source=raw_data(file_path=self.filename)
+                source=raw_data(file_path=self.filename,is_Head=True)
                 result=source.export_result(self.filename)
-                all_subsets=source.get_all_gainA_test(result_filepath=self.filename)
+                #處理all subsets部分
+                all_subsets_filepath=self.filename.replace('.csv','-分析過程子集.csv')
+                source.reset_all_subsets_file(all_subsets_filepath) 
+                all_subsets=source.get_all_gainA_test(result_filepath=all_subsets_filepath)
                 '''
                 寫這 在call個函數ㄅ
                 '''    
                 # sum
                 data = pd.read_csv(result)
-                # print('Simplicity:',data['Simplicity'].sum())
-                # print('Support:',data['Support'].sum())
                 data = data.append({'RID':'','Support':data['Support'].sum(),'Simplicity':data['Simplicity'].sum()}, ignore_index = True)
                 data.to_csv(result, index = False,encoding='utf-8-sig')
                 self.writeToMiniConsole('分析完成,輸出結果位於-->'+result+'\n')

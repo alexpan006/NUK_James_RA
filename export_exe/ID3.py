@@ -4,6 +4,7 @@ import pandas as pd
 import math
 import json
 import csv
+import os
 
 '''
 0209 -- CCC 各種暴力解orz
@@ -170,10 +171,11 @@ class raw_data:
     primary_keys=dict() #唯一分辨的key
     clean_subsets=[] #其他的clean subset 裡面存 clean_data class
     unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
+    is_Head=False #是否是開頭
     
     export_gainA = attr_gaiaA()
     #建構子
-    def __init__(self,file_path=None,dataframe=None,primary_keys=None):
+    def __init__(self,file_path=None,dataframe=None,primary_keys=None,is_Head=False):
         '''
         先判定是否需要讀csv,若不用就直接用現有dataframe建立
         之後就先建立attri字典
@@ -182,6 +184,7 @@ class raw_data:
         #直接相等會讓primary_keys的型態變成None
         if(primary_keys!=None):
             self.primary_keys=primary_keys #傳入primary key會是dict
+        self.is_Head=is_Head
         self.load_data(file_path=file_path,data=dataframe)
         self.sort_attri_order() #排序gainA
         self.reorder_raw_source() #依照attribute的gainA去重新排列data
@@ -199,46 +202,8 @@ class raw_data:
         self.clean_subsets=[] #其他的clean subset 裡面存 clean_data class
         self.unclean_subsets=[]  #其他的unclean subset 裡面存raw_data class
         self.export_gainA.file_path = ''
-    #遞迴的部分
-    def export_result(self,result_filepath):
-        # print('乾淨節點數:',len(self.clean_subsets),"不乾淨節點數:",len(self.unclean_subsets))
-        for unclean_subset in self.unclean_subsets:
-            unclean_subset.export_result(result_filepath)
-        for clean_subset in self.clean_subsets:
-            clean_subset.export_result(result_filepath)
-        result_filepath=result_filepath.replace('.csv','-分析後.csv')
-        # self.get_all_gainA(export_gainA = self.export_gainA)
-        # export_gainA_path = result_filepath.replace('-分析後.csv','-分析過程子集.csv')
-        # self.export_gainA.export(file_path = export_gainA_path)
-        return result_filepath
-    
-    def get_all_gainA_test(self,result_filepath):
-        result_filepath=result_filepath.replace('.csv','-分析過程子集.csv')
-        words_to_write=list()
-        for unclean_subset in self.unclean_subsets:
-            words_to_write.append(['Title==>',json.dumps(unclean_subset.primary_keys,ensure_ascii=False).encode('utf8').decode()])
-            words_to_write.append(['屬性','','Gain(A)'])
-            # words_to_write.append(['屬性','Gain(A)',''])  
-            words_to_write.append(['結論',str(unclean_subset.class_info),''])
-            # words_to_write.append(['結論','',str(unclean_subset.class_info)])
-            for attr in unclean_subset.attributes.values():
-                words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
-                # words_to_write.append([attr.effect_attr_name,attr.gainA,attr.attr_info])
-                
-        words_to_write.append(['Title==>',json.dumps(self.primary_keys,ensure_ascii=False).encode('utf8').decode()])
-        words_to_write.append(['屬性','','Gain(A)'])
-        # words_to_write.append(['屬性','Gain(A)',''])        
-        words_to_write.append(['結論',str(self.class_info),''])
-        # words_to_write.append(['結論','',str(self.class_info)])
-        for attr in self.attributes.values():
-            words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
-            # words_to_write.append([attr.effect_attr_name,attr.gainA,attr.attr_info])
-            
-        # print(words_to_write)
-        with open(result_filepath,'w',encoding='utf-8-sig',newline='') as f:
-            writer=csv.writer(f)
-            writer.writerows(words_to_write)
-        return result_filepath
+        is_Head=False #是否是開頭
+        
         
     #分離unclean跟clean資料
     def extract_to_subsets(self):
@@ -345,6 +310,52 @@ class raw_data:
         self.class_info=self.cal_i(list(self.conclusions.values())) #算類別訊息輛
         for col in self.raw_source.columns[:-1]:
             self.attributes[col]=effect_attribute(name=col,conclusion=list(self.conclusions.keys()),gainA=self.class_info,dataframe=self.raw_source[[col,self.raw_source.columns[-1]]])
+    #遞迴的部分
+    def export_result(self,result_filepath):
+        # print('乾淨節點數:',len(self.clean_subsets),"不乾淨節點數:",len(self.unclean_subsets))
+        for unclean_subset in self.unclean_subsets:
+            unclean_subset.export_result(result_filepath)
+        for clean_subset in self.clean_subsets:
+            clean_subset.export_result(result_filepath)
+        result_filepath=result_filepath.replace('.csv','-分析後.csv')
+        return result_filepath
+    
+    def get_all_gainA_test(self,result_filepath):
+        words_to_write=list() #準備被寫入的list
+        if( self.is_Head ):
+            words_to_write.append(['Title==>',json.dumps(self.primary_keys,ensure_ascii=False).encode('utf8').decode()])
+            words_to_write.append(['屬性','','Gain(A)'])
+            words_to_write.append(['結論',str(self.class_info),''])
+            for attr in self.attributes.values():
+                words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+                
+            with open(result_filepath,'a',encoding='utf-8-sig',newline='') as f:
+                writer=csv.writer(f)
+                writer.writerows(words_to_write)
+            words_to_write.clear()
+            
+        for unclean_subset in self.unclean_subsets:
+            words_to_write.append(['Title==>',json.dumps(unclean_subset.primary_keys,ensure_ascii=False).encode('utf8').decode()])
+            words_to_write.append(['屬性','','Gain(A)'])
+            words_to_write.append(['結論',str(unclean_subset.class_info),''])
+            for attr in unclean_subset.attributes.values():
+                words_to_write.append([attr.effect_attr_name,attr.attr_info,attr.gainA])
+            with open(result_filepath,'a',encoding='utf-8-sig',newline='') as f:
+                writer=csv.writer(f)
+                writer.writerows(words_to_write)
+            words_to_write.clear()
+            
+        for unclean_subset in self.unclean_subsets:
+            unclean_subset.get_all_gainA_test(result_filepath)
+                
+            
+        return result_filepath
+    
+    def reset_all_subsets_file(self,filepath):
+        try:
+            os.remove(filepath)
+        except:
+            pass
         
     def cal_i(self,x):
         '''
@@ -361,23 +372,6 @@ class raw_data:
             temp=(-one/total_count)*math.log2((one/total_count))
             sum+=temp
         return sum
-    def get_all_gainA(self, export_gainA):
-        export_gainA.gainA_list['subset'] = []
-        export_gainA.gainA_list['attributes'] = []
-        export_gainA.gainA_list[''] = []
-        export_gainA.gainA_list['GainA'] = []
-
-        if export_gainA.file_path == '':
-            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':'None'}, ignore_index = True)
-            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':self.class_info}, ignore_index = True)
-            for attr in self.attributes.values():
-                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
-
-        for unclean_subset in self.unclean_subsets:
-            export_gainA.gainA_list = export_gainA.gainA_list.append({'subset':unclean_subset.primary_keys}, ignore_index = True)
-            export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':'結論','':unclean_subset.class_info}, ignore_index = True)
-            for attr in unclean_subset.attributes.values():
-                export_gainA.gainA_list = export_gainA.gainA_list.append({'attributes':attr.effect_attr_name,'':attr.attr_info,'GainA':attr.gainA}, ignore_index = True)
                 
     
 class effect_attribute:
@@ -479,9 +473,10 @@ def main():
     
 
 def panMain():
-    test=raw_data(file_path='./家欄位.csv')# pan
-    test.export_result("./家欄位_測試匯出.csv")
-    # test.get_all_gainA_test()
+    test=raw_data(file_path='./Weather-MoreData.csv',is_Head=True)# pan
+    test.export_result("./Weather-MoreData_測試匯出.csv")
+    test.reset_all_subsets_file('./Weather-MoreData_分析過程子集.csv')
+    test.get_all_gainA_test('./Weather-MoreData_分析過程子集.csv')
     
     pass
 

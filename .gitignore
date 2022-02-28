@@ -4,6 +4,7 @@ export_exe/
 
 #csv
 .csv
+*.csv
 
 
 

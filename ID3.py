@@ -149,7 +149,7 @@ class clean_data:
         for key in self.result.keys():
             self.policy[key] = self.result[key]
         
-        # self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
+        self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
 
         
     def export_result(self,result_filepath):

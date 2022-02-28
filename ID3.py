@@ -149,7 +149,7 @@ class clean_data:
         for key in self.result.keys():
             self.policy[key] = self.result[key]
         
-        self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
+        # self.policy.to_csv(new_path, mode = 'a', header = False, index = False,encoding='utf-8-sig') #輸出用append的方式家道csv
 
         
     def export_result(self,result_filepath):
@@ -281,10 +281,6 @@ class raw_data:
             policy['RID'] = []
             for effect in self.raw_source.columns[:-1]:
                 policy[effect] = []
-            '''
-            我看不懂建興想幹嘛ㄌ class的部分 他是想放最後一個還是原本結論自己跑到最後去ㄚ
-            啊反正就 下面這邊 如果想要class在最後一個 把policy['Class']調到policy['Simplicity']後面就好ㄌ
-            '''
             policy['Class'] = []
             policy['Deep'] = []
             policy['Support'] = []
@@ -466,6 +462,8 @@ class effect_attribute:
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
         self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA    
+        
+        
 
 def main():
     panMain()
@@ -516,7 +514,8 @@ def csvValidCheck(filename):
                 if(rowSize!=standardRowSize):
                     return False,"csv檔第  "+str(index)+"  行的欄位數與其他行不一致\n"
                 if(re.fullmatch(r'(\D*)+(\d*)',temp[-1],flags=0)== None):
-                    return False,"csv檔第  "+str(index)+"  行的歸納結果不符合命名規則\n歸納結果的命名規則為:任意字元(不可以穿插數字)+數字\n"
+                    pass
+                    # return False,"csv檔第  "+str(index)+"  行的歸納結果不符合命名規則\n歸納結果的命名規則為:任意字元(不可以穿插數字)+數字\n"
                 for item in temp:
                     if(item=="" or item==None):
                         return False,"csv檔第  "+str(index)+"  行有欄位為空\n"

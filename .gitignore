@@ -2,6 +2,9 @@
 #Output result
 export_exe/
 
+#csv
+.csv
+
 
 
 # Byte-compiled / optimized / DLL files

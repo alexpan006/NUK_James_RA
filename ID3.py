@@ -112,7 +112,7 @@ class clean_data:
         self.simplicity=self.support/self.deep #Simplicity
         
         #處理class distribution的部分
-        #先sort self.conclusion確保都是['不好', '好']
+        #先sort self.conclusion確保都是['不好', '好']      
         self.conclusions.sort()
         class_d=list()
         for one_conclusion in self.conclusions: #初始化class_d
@@ -192,7 +192,7 @@ class raw_data:
         
     #Reset所有參數
     def reset_all(self):
-        self.conclusions = {} #結論 ex: {好:2,不好:5}
+        # self.conclusions = {} #結論 ex: {好:2,不好:5}
         self.conclusion_col = ""
         self.raw_source=pd.DataFrame()
         self.class_info=0.0  #類別訊息獲取量

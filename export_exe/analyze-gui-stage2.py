@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter.constants import BOTTOM
 from tkinter.filedialog import askopenfilename, test
 from tkinter import ttk 
-from ID3 import attr_gaiaA, csvValidCheck
+from ID3 import attr_gaiaA, csvValidCheck,exportUncleanDataNew
 from ID3 import clean_data
 from ID3 import raw_data
 import csv
@@ -24,6 +24,27 @@ class analyzeGui:
         self.miniConsole.insert('insert',string)
         self.miniConsole.config(state='disable')
         self.miniConsole.see(tk.END)
+        
+    def exportUnclean(self):
+        if(self.filename==""):
+            self.writeToMiniConsole('還沒有選擇欲分離不相容資料的csv檔\n')
+            return
+        self.isOkay=False
+        while(not self.isOkay):
+            self.writeToMiniConsole('請輸入相容資料的接受等級(一定要大於0.51)，輸入完請按Enter :\n')
+            self.miniConsole.config(state='normal')
+            self.miniConsole.wait_variable(self.rule)
+            if(self.rule.get()==None or self.rule.get()==''):
+                continue
+            if(float(self.rule.get())<=0.5):
+                continue
+            clean,unclean,state,self.isOkay=exportUncleanDataNew(self.filename,float(self.rule.get()))
+            if(not self.isOkay):
+                self.writeToMiniConsole('出錯'+state+"\n")
+        self.writeToMiniConsole('相容資料以輸出至==>'+clean+"\n"+'不相容資料以輸出至==>'+unclean+'\n')
+        self.miniConsole.config(state='disable')
+        
+        
     #開始分析
     def startAnalyze(self):
         resultToken=False
@@ -77,9 +98,9 @@ class analyzeGui:
         chooseCsvFile=tk.Button(topFrame,text='選擇Csv檔案',fg='Green',command=self.showChooseFile)
         chooseCsvFile.grid(column=0, row=1,pady=10)
         
-        # #分離不相容
-        # exportUnclean=tk.Button(topFrame,text='分離不相容資料',fg='Green',command=self.exportUnclean)
-        # exportUnclean.grid(column=0, row=2,pady=10)
+        #分離不相容
+        exportUnclean=tk.Button(topFrame,text='分離不相容資料',fg='Green',command=self.exportUnclean)
+        exportUnclean.grid(column=0, row=2,pady=10)
         
         
         # #規則欄位排序

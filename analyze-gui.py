@@ -3,10 +3,9 @@ from os import error, stat
 import tkinter as tk
 from tkinter.constants import BOTTOM
 from tkinter.filedialog import askopenfilename, test
-from analysis_stage1 import csvValidCheck
+from analysis_stage1 import csvValidCheck, exportUncleanDataNew
 from analysis_stage1 import csvAnalyzeData
 from analysis_stage1 import sortRuleRow
-from analysis_stage1 import exportUncleanData
 
 from tkinter import ttk 
 
@@ -62,7 +61,7 @@ class analyzeGui:
                 continue
             if(float(self.rule.get())<=0.5):
                 continue
-            clean,unclean,state,self.isOkay=exportUncleanData(self.filename,float(self.rule.get()))
+            clean,unclean,state,self.isOkay=exportUncleanDataNew(self.filename,float(self.rule.get()))
             if(not self.isOkay):
                 self.writeToMiniConsole('出錯'+state+"\n")
         self.writeToMiniConsole('相容資料以輸出至==>'+clean+"\n"+'不相容資料以輸出至==>'+unclean+'\n')

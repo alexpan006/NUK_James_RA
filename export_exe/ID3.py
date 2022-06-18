@@ -5,7 +5,7 @@ import math
 import json
 import csv
 import os
-
+from subset import subset
 '''
 0209 -- CCC 各種暴力解orz
 >RID解決完了
@@ -281,10 +281,6 @@ class raw_data:
             policy['RID'] = []
             for effect in self.raw_source.columns[:-1]:
                 policy[effect] = []
-            '''
-            我看不懂建興想幹嘛ㄌ class的部分 他是想放最後一個還是原本結論自己跑到最後去ㄚ
-            啊反正就 下面這邊 如果想要class在最後一個 把policy['Class']調到policy['Simplicity']後面就好ㄌ
-            '''
             policy['Class'] = []
             policy['Deep'] = []
             policy['Support'] = []
@@ -466,6 +462,8 @@ class effect_attribute:
         for one in self.attr_subset.values():
             self.attr_info+=(sum(one)/self.attr_data.shape[0])*self.cal_i(one)
         self.gainA=self.parent_gainA-self.attr_info #結論-自己的屬性訊息量=GainA    
+        
+        
 
 def main():
     panMain()
@@ -516,9 +514,49 @@ def csvValidCheck(filename):
                 if(rowSize!=standardRowSize):
                     return False,"csv檔第  "+str(index)+"  行的欄位數與其他行不一致\n"
                 if(re.fullmatch(r'(\D*)+(\d*)',temp[-1],flags=0)== None):
-                    return False,"csv檔第  "+str(index)+"  行的歸納結果不符合命名規則\n歸納結果的命名規則為:任意字元(不可以穿插數字)+數字\n"
+                    pass
+                    # return False,"csv檔第  "+str(index)+"  行的歸納結果不符合命名規則\n歸納結果的命名規則為:任意字元(不可以穿插數字)+數字\n"
                 for item in temp:
                     if(item=="" or item==None):
                         return False,"csv檔第  "+str(index)+"  行有欄位為空\n"
             index+=1
         return True,"csv檔檢查通過,符合格式\n"
+    
+    
+#分離相容與不相容資料    
+def exportUncleanDataNew(filename,tolerance):
+    classSorted={} # { ['晴朗','炎熱','高','無'] : subset(..), ['晴朗','炎熱','高','有'] : subset(..) }
+    header=[] # [ '天氣','氣溫','濕度','風','結論' ]
+    with open(filename,'r',encoding="utf-8-sig") as f1:
+        index=0
+        lines=f1.readlines()
+        for line in lines:
+            if(index==0):
+                header=line.strip().split(',')
+            else:
+                oneRow=line.strip().split(',')
+                if( tuple(oneRow[:-1]) not in classSorted):
+                    tempSubset=subset(oneRow,tolerance)
+                    classSorted[tuple(oneRow[:-1])]=tempSubset
+                else:
+                    classSorted[tuple(oneRow[:-1])].addData(oneRow)
+            index+=1
+    cleanDataFileName=filename.replace('.csv','-clean.csv')
+    uncleanDataFileName=filename.replace('.csv','-unclean.csv')
+    
+    #輸出檔案
+    
+    with open(cleanDataFileName,'w',encoding='utf-8-sig',newline='') as cleanF,open(uncleanDataFileName,'w',encoding='utf-8-sig',newline='') as uncleanF:
+        cleanWriter=csv.writer(cleanF)
+        uncleanWriter=csv.writer(uncleanF)
+        #先寫表頭
+        cleanWriter.writerow(header)
+        uncleanWriter.writerow(header)
+        
+        for oneSubset in classSorted.values():
+            cleanData,uncleanData=oneSubset.exportCleanAndUncleanData()
+            if(cleanData !=None):
+                cleanWriter.writerows(cleanData)
+            if(uncleanData!=None):
+                uncleanWriter.writerows(uncleanData)
+    return cleanDataFileName,uncleanDataFileName,'',True

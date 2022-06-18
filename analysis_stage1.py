@@ -84,12 +84,51 @@ def sortRuleRow(filename,newOrder):
             df_reorder = df[newOrder] # rearrange column here
             df_reorder.to_csv(newFileName, index=False)
             return True,'完成',newFileName,False
+
+
+def exportUncleanDataNew(filename,tolerance):
+    classSorted={} # { ['晴朗','炎熱','高','無'] : subset(..), ['晴朗','炎熱','高','有'] : subset(..) }
+    header=[] # [ '天氣','氣溫','濕度','風','結論' ]
+    with open(filename,'r',encoding="utf-8-sig") as f1:
+        index=0
+        lines=f1.readlines()
+        for line in lines:
+            if(index==0):
+                header=line.strip().split(',')
+            else:
+                oneRow=line.strip().split(',')
+                if( tuple(oneRow[:-1]) not in classSorted):
+                    tempSubset=subset(oneRow,tolerance)
+                    classSorted[tuple(oneRow[:-1])]=tempSubset
+                else:
+                    classSorted[tuple(oneRow[:-1])].addData(oneRow)
+            index+=1
+    cleanDataFileName=filename.replace('.csv','-clean.csv')
+    uncleanDataFileName=filename.replace('.csv','-unclean.csv')
+    
+    #輸出檔案
+    
+    with open(cleanDataFileName,'w',encoding='utf-8-sig',newline='') as cleanF,open(uncleanDataFileName,'w',encoding='utf-8-sig',newline='') as uncleanF:
+        cleanWriter=csv.writer(cleanF)
+        uncleanWriter=csv.writer(uncleanF)
+        #先寫表頭
+        cleanWriter.writerow(header)
+        uncleanWriter.writerow(header)
+        
+        for oneSubset in classSorted.values():
+            cleanData,uncleanData=oneSubset.exportCleanAndUncleanData()
+            if(cleanData !=None):
+                cleanWriter.writerows(cleanData)
+            if(uncleanData!=None):
+                uncleanWriter.writerows(uncleanData)
+    return cleanDataFileName,uncleanDataFileName,'',True
+
         
 #分離不相容資料        
 def exportUncleanData(filename,tolerance):
     allSubset=[] #The arrayList to store all the subset
     classSorted={}
-
+    header=[]
     with open(filename,'r',encoding="utf-8-sig") as f1:
         index=0
         lines=f1.readlines()
@@ -104,6 +143,8 @@ def exportUncleanData(filename,tolerance):
                 allSubset.append(subset(temp,tempResult))
             index+=1
     classSorted=dict(sorted(classSorted.items(), key=lambda item: item[1])) #sort class name
+    
+    
     test={}
     for data in allSubset:
         if(tuple(data.conditions)  not in test):
